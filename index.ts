@@ -29,7 +29,7 @@ type Response = {
 async function getFollowersFromGitHub(
   octokit: ReturnType<typeof github.getOctokit>,
   writeToFile: string,
-): Promise<Follower[]> {
+): Promise<{ followers: Follower[]; totalCount: number }> {
   const query = `
     query($after: String) {
       viewer {
@@ -69,7 +69,10 @@ async function getFollowersFromGitHub(
     'utf8',
   )
 
-  return followers
+  return {
+    followers,
+    totalCount: result ? result.viewer.followers.totalCount : 0,
+  }
 }
 
 async function getPreviousFollowers(
@@ -150,7 +153,7 @@ async function uploadFollowerFile(
 function getFollowersChange(
   previous: Follower[],
   current: Follower[],
-): { newFollow: Follower[]; unfollowed: Follower[] } {
+): { followers: Follower[]; unfollowers: Follower[] } {
   const previousMap = new Map(
     previous.map((follower) => [follower.databaseId, follower]),
   )
@@ -158,13 +161,46 @@ function getFollowersChange(
     current.map((follower) => [follower.databaseId, follower]),
   )
 
-  const newFollow = current.filter(
+  const followers = current.filter(
     (follower) => !previousMap.has(follower.databaseId),
   )
-  const unfollowed = previous.filter(
+  const unfollowers = previous.filter(
     (follower) => !currentMap.has(follower.databaseId),
   )
-  return { newFollow, unfollowed }
+  return { followers, unfollowers }
+}
+
+function toMarkdown(
+  totalCount: number,
+  followers: Follower[],
+  unfollowers: Follower[],
+): string {
+  const followersMarkdown = followers
+    .map(
+      (follower) =>
+        `- ![](${follower.avatarUrl}) [${follower.name || follower.login}](${
+          follower.url
+        })`,
+    )
+    .join('\n')
+  const unfollowersMarkdown = unfollowers
+    .map(
+      (follower) =>
+        `- ![](${follower.avatarUrl}) [${follower.name || follower.login}](${
+          follower.url
+        })`,
+    )
+    .join('\n')
+
+  return `
+  # You have ${totalCount} followers now
+
+  ## New followers:
+  ${followersMarkdown}
+  
+  ## Unfollowers:
+  ${unfollowersMarkdown}
+  `
 }
 
 async function run() {
@@ -183,16 +219,20 @@ async function run() {
     followerFile,
   )
 
-  const currentFollowers = await getFollowersFromGitHub(octokit, followerFile)
+  const { followers: currentFollowers, totalCount } =
+    await getFollowersFromGitHub(octokit, followerFile)
+
   await uploadFollowerFile(artifactClient, followerArtifactName, followerFile)
 
-  const { newFollow, unfollowed } = getFollowersChange(
+  const { followers, unfollowers } = getFollowersChange(
     previousFollowers,
     currentFollowers,
   )
   core.info(
-    `New followers: ${newFollow.length}, unfollowed: ${unfollowed.length}`,
+    `Change: \u001b[38;5;10m${followers.length} followers, \u001b[38;5;11m${unfollowers.length} unfollowers`,
   )
+
+  core.info(toMarkdown(totalCount, followers, unfollowers))
 }
 
 run()

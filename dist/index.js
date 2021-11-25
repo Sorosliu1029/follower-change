@@ -17352,7 +17352,10 @@ function getFollowersFromGitHub(octokit, writeToFile) {
             followers.push(...result.viewer.followers.nodes);
         } while (result.viewer.followers.pageInfo.hasNextPage);
         yield fs_1.default.promises.writeFile(writeToFile, JSON.stringify(followers, null, 2), 'utf8');
-        return followers;
+        return {
+            followers,
+            totalCount: result ? result.viewer.followers.totalCount : 0,
+        };
     });
 }
 function getPreviousFollowers(octokit, artifactName, followerFile) {
@@ -17409,9 +17412,26 @@ function uploadFollowerFile(client, artifactName, file) {
 function getFollowersChange(previous, current) {
     const previousMap = new Map(previous.map((follower) => [follower.databaseId, follower]));
     const currentMap = new Map(current.map((follower) => [follower.databaseId, follower]));
-    const newFollow = current.filter((follower) => !previousMap.has(follower.databaseId));
-    const unfollowed = previous.filter((follower) => !currentMap.has(follower.databaseId));
-    return { newFollow, unfollowed };
+    const followers = current.filter((follower) => !previousMap.has(follower.databaseId));
+    const unfollowers = previous.filter((follower) => !currentMap.has(follower.databaseId));
+    return { followers, unfollowers };
+}
+function toMarkdown(totalCount, followers, unfollowers) {
+    const followersMarkdown = followers
+        .map((follower) => `- ![](${follower.avatarUrl}) [${follower.name || follower.login}](${follower.url})`)
+        .join('\n');
+    const unfollowersMarkdown = unfollowers
+        .map((follower) => `- ![](${follower.avatarUrl}) [${follower.name || follower.login}](${follower.url})`)
+        .join('\n');
+    return `
+  # You have ${totalCount} followers now
+
+  ## New followers:
+  ${followersMarkdown}
+  
+  ## Unfollowers:
+  ${unfollowersMarkdown}
+  `;
 }
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
@@ -17422,10 +17442,11 @@ function run() {
         const octokit = github.getOctokit(myToken);
         const artifactClient = artifact.create();
         const previousFollowers = yield getPreviousFollowers(octokit, followerArtifactName, followerFile);
-        const currentFollowers = yield getFollowersFromGitHub(octokit, followerFile);
+        const { followers: currentFollowers, totalCount } = yield getFollowersFromGitHub(octokit, followerFile);
         yield uploadFollowerFile(artifactClient, followerArtifactName, followerFile);
-        const { newFollow, unfollowed } = getFollowersChange(previousFollowers, currentFollowers);
-        core.info(`New followers: ${newFollow.length}, unfollowed: ${unfollowed.length}`);
+        const { followers, unfollowers } = getFollowersChange(previousFollowers, currentFollowers);
+        core.info(`Change: \u001b[38;5;10m${followers.length} followers, \u001b[38;5;11m${unfollowers.length} unfollowers`);
+        core.info(toMarkdown(totalCount, followers, unfollowers));
     });
 }
 run()
