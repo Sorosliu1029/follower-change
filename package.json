@@ -1,7 +1,7 @@
 {
-  "name": "follower-notifier",
+  "name": "follower-change",
   "version": "1.0.0",
-  "description": "Notify you when your GitHub followers change (follow or unfollow)",
+  "description": "Get your GitHub followers change (follow or unfollow)",
   "main": "index.js",
   "scripts": {
     "lint": "eslint .",
@@ -11,7 +11,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Sorosliu1029/follower-notifier.git"
+    "url": "git+https://github.com/Sorosliu1029/follower-change.git"
   },
   "keywords": [
     "GitHub",
@@ -21,9 +21,9 @@
   "author": "Soros Liu",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/Sorosliu1029/follower-notifier/issues"
+    "url": "https://github.com/Sorosliu1029/follower-change/issues"
   },
-  "homepage": "https://github.com/Sorosliu1029/follower-notifier#readme",
+  "homepage": "https://github.com/Sorosliu1029/follower-change#readme",
   "dependencies": {
     "@actions/artifact": "^0.5.2",
     "@actions/core": "^1.6.0",
