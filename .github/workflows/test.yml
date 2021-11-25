@@ -24,3 +24,15 @@ jobs:
           markdown:\n
           ${{ steps.followerChange.outputs.markdown }}
           "
+      - name: email me
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.qq.com
+          server_port: 465
+          username: ${{ secrets.MAIL_USERNAME }}
+          password: ${{ secrets.MAIL_PASSWORD }}
+          subject: Follower Change
+          from: Follower Change Notifier
+          to: ${{ secrets.MY_EMAIL }}
+          html_body: ${{ steps.followerChange.outputs.markdown }}
+          convert_markdown: true
