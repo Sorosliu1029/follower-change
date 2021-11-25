@@ -7,7 +7,6 @@ on:
       - "releases/*"
 
 jobs:
-  # test action works running from the graph
   test:
     runs-on: ubuntu-latest
     steps:
@@ -26,12 +25,13 @@ jobs:
           "
       - name: email me
         uses: dawidd6/action-send-mail@v3
+        if: steps.followerChange.outputs.changed == true
         with:
           server_address: smtp.qq.com
           server_port: 465
           username: ${{ secrets.MAIL_USERNAME }}
           password: ${{ secrets.MAIL_PASSWORD }}
-          subject: Follower Change
+          subject: GitHub Follower Change
           from: Follower Change Notifier
           to: ${{ secrets.MY_EMAIL }}
           html_body: ${{ steps.followerChange.outputs.markdown }}
