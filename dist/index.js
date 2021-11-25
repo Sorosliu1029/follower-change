@@ -17357,8 +17357,8 @@ function getFollowersFromGitHub(octokit, writeToFile) {
 }
 function getPreviousFollowers(octokit, artifactName, followerFile) {
     return __awaiter(this, void 0, void 0, function* () {
-        const owner = 'Sorosliu1029' || 0;
-        const repo = 'follower-notifier' || 0;
+        const owner = github.context.repo.owner;
+        const repo = github.context.repo.repo;
         try {
             const listArtifactsResp = yield octokit.request('GET /repos/{owner}/{repo}/actions/artifacts', {
                 owner,
@@ -17378,7 +17378,7 @@ function getPreviousFollowers(octokit, artifactName, followerFile) {
             if (!latestArtifact) {
                 return [];
             }
-            core.info(`Latest artifact: ${latestArtifact === null || latestArtifact === void 0 ? void 0 : latestArtifact.id}, download url: ${latestArtifact === null || latestArtifact === void 0 ? void 0 : latestArtifact.archive_download_url}`);
+            core.info(`Latest artifact: ${latestArtifact === null || latestArtifact === void 0 ? void 0 : latestArtifact.id}`);
             const downloadResp = yield octokit.request('GET /repos/{owner}/{repo}/actions/artifacts/{artifact_id}/{archive_format}', {
                 owner,
                 repo,
@@ -17400,7 +17400,9 @@ function getPreviousFollowers(octokit, artifactName, followerFile) {
 }
 function uploadFollowerFile(client, artifactName, file) {
     return __awaiter(this, void 0, void 0, function* () {
-        const uploadResult = yield client.uploadArtifact(artifactName, [file], '.');
+        const uploadResult = yield client.uploadArtifact(artifactName, [file], '.', {
+            retentionDays: 30,
+        });
         core.info(`Uploaded ${uploadResult.artifactItems.join(', ')} to ${uploadResult.artifactName}`);
     });
 }
@@ -17413,8 +17415,7 @@ function getFollowersChange(previous, current) {
 }
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
-        const myToken = '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';
-        // core.getInput('myToken', { required: true })
+        const myToken = core.getInput('myToken', { required: true });
         core.setSecret(myToken);
         const followerArtifactName = 'my-followers';
         const followerFile = 'followers.json';
@@ -17422,7 +17423,7 @@ function run() {
         const artifactClient = artifact.create();
         const previousFollowers = yield getPreviousFollowers(octokit, followerArtifactName, followerFile);
         const currentFollowers = yield getFollowersFromGitHub(octokit, followerFile);
-        // await uploadFollowerFile(artifactClient, followerArtifactName, followerFile)
+        yield uploadFollowerFile(artifactClient, followerArtifactName, followerFile);
         const { newFollow, unfollowed } = getFollowersChange(previousFollowers, currentFollowers);
         core.info(`New followers: ${newFollow.length}, unfollowed: ${unfollowed.length}`);
     });
