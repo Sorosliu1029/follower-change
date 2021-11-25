@@ -25,6 +25,7 @@
   },
   "homepage": "https://github.com/Sorosliu1029/follower-notifier#readme",
   "dependencies": {
+    "@actions/artifact": "^0.5.2",
     "@actions/core": "^1.6.0",
     "@actions/github": "^5.0.0"
   },

@@ -1,5 +1,6 @@
 import * as github from '@actions/github'
 import * as core from '@actions/core'
+import * as artifact from '@actions/artifact'
 import fs from 'fs'
 
 type Follower = {
@@ -47,7 +48,8 @@ query($after: String) {
 `
 
 async function run() {
-  const myToken = core.getInput('myToken')
+  const myToken = core.getInput('myToken', { required: true })
+  const followerFile = 'followers.json'
   core.setSecret(myToken)
   const octokit = github.getOctokit(myToken)
 
@@ -62,7 +64,19 @@ async function run() {
     followers.push(...result.viewer.followers.nodes)
   } while (result.viewer.followers.pageInfo.hasNextPage)
 
-  fs.writeFileSync('./followers.json', JSON.stringify(followers, null, 2))
+  fs.writeFileSync(followerFile, JSON.stringify(followers, null, 2))
+
+  const artifactClient = artifact.create()
+  const uploadResult = await artifactClient.uploadArtifact(
+    'my-followers',
+    [followerFile],
+    '.',
+  )
+  core.info(
+    `Uploaded ${uploadResult.artifactItems.join(', ')} to ${
+      uploadResult.artifactName
+    }`,
+  )
 }
 
 run()
