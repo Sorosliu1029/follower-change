@@ -25,33 +25,32 @@ type Response = {
   }
 }
 
-const query = `
-query($after: String) {
-  viewer {
-    followers(first: 100, after: $after) {
-      nodes {
-        databaseId
-        name
-        url
-        avatarUrl
-        login
+async function getFollowersFromGitHub(
+  token: string,
+  writeToFile: string,
+): Promise<Follower[]> {
+  const octokit = github.getOctokit(token)
+  const query = `
+    query($after: String) {
+      viewer {
+        followers(first: 100, after: $after) {
+          nodes {
+            databaseId
+            name
+            url
+            avatarUrl
+            login
+          }
+          pageInfo {
+            endCursor
+            startCursor
+            hasNextPage
+          }
+          totalCount
+        }
       }
-      pageInfo {
-        endCursor
-        startCursor
-        hasNextPage
-      }
-      totalCount
     }
-  }
-}
-`
-
-async function run() {
-  const myToken = core.getInput('myToken', { required: true })
-  const followerFile = 'followers.json'
-  core.setSecret(myToken)
-  const octokit = github.getOctokit(myToken)
+  `
 
   const followers: Follower[] = []
   let result: Response | undefined = undefined
@@ -64,18 +63,95 @@ async function run() {
     followers.push(...result.viewer.followers.nodes)
   } while (result.viewer.followers.pageInfo.hasNextPage)
 
-  fs.writeFileSync(followerFile, JSON.stringify(followers, null, 2))
-
-  const artifactClient = artifact.create()
-  const uploadResult = await artifactClient.uploadArtifact(
-    'my-followers',
-    [followerFile],
-    '.',
+  await fs.promises.writeFile(
+    writeToFile,
+    JSON.stringify(followers, null, 2),
+    'utf8',
   )
+
+  return followers
+}
+
+async function downloadFollowerFile(
+  client: artifact.ArtifactClient,
+  artifactName: string,
+): Promise<string | undefined> {
+  try {
+    const downloadResult = await client.downloadArtifact(
+      artifactName,
+      './previousFollowers',
+    )
+    core.info(
+      `Downloaded ${downloadResult.downloadPath} from ${downloadResult.artifactName}`,
+    )
+    return downloadResult.downloadPath
+  } catch (error) {
+    core.error(`Failed to download ${artifactName}, with error: ${error}`)
+    return
+  }
+}
+
+async function uploadFollowerFile(
+  client: artifact.ArtifactClient,
+  artifactName: string,
+  file: string,
+): Promise<void> {
+  const uploadResult = await client.uploadArtifact(artifactName, [file], '.')
   core.info(
     `Uploaded ${uploadResult.artifactItems.join(', ')} to ${
       uploadResult.artifactName
     }`,
+  )
+}
+
+function getFollowersChange(
+  previous: Follower[],
+  current: Follower[],
+): { newFollow: Follower[]; unfollowed: Follower[] } {
+  const previousMap = new Map(
+    previous.map((follower) => [follower.databaseId, follower]),
+  )
+  const currentMap = new Map(
+    current.map((follower) => [follower.databaseId, follower]),
+  )
+
+  const newFollow = current.filter(
+    (follower) => !previousMap.has(follower.databaseId),
+  )
+  const unfollowed = previous.filter(
+    (follower) => !currentMap.has(follower.databaseId),
+  )
+  return { newFollow, unfollowed }
+}
+
+async function run() {
+  const myToken = core.getInput('myToken', { required: true })
+  core.setSecret(myToken)
+
+  const followerArtifactName = 'my-followers'
+  const followerFile = 'followers.json'
+
+  const artifactClient = artifact.create()
+
+  const previousFollowerFile = await downloadFollowerFile(
+    artifactClient,
+    followerArtifactName,
+  )
+  let previousFollowers: Follower[] = []
+  if (previousFollowerFile) {
+    const content = await fs.promises.readFile(previousFollowerFile, 'utf8')
+    previousFollowers = JSON.parse(content)
+  }
+
+  const currentFollowers = await getFollowersFromGitHub(myToken, followerFile)
+  await uploadFollowerFile(artifactClient, followerArtifactName, followerFile)
+
+  const { newFollow, unfollowed } = getFollowersChange(
+    previousFollowers,
+    currentFollowers,
+  )
+  core.info(
+    `New followers: ${newFollow.length}, unfollowed: ${unfollowed.length}`,
   )
 }
 

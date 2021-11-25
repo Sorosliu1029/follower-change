@@ -14483,33 +14483,30 @@ const github = __importStar(__nccwpck_require__(5438));
 const core = __importStar(__nccwpck_require__(2186));
 const artifact = __importStar(__nccwpck_require__(2605));
 const fs_1 = __importDefault(__nccwpck_require__(7147));
-const query = `
-query($after: String) {
-  viewer {
-    followers(first: 100, after: $after) {
-      nodes {
-        databaseId
-        name
-        url
-        avatarUrl
-        login
-      }
-      pageInfo {
-        endCursor
-        startCursor
-        hasNextPage
-      }
-      totalCount
-    }
-  }
-}
-`;
-function run() {
+function getFollowersFromGitHub(token, writeToFile) {
     return __awaiter(this, void 0, void 0, function* () {
-        const myToken = core.getInput('myToken', { required: true });
-        const followerFile = 'followers.json';
-        core.setSecret(myToken);
-        const octokit = github.getOctokit(myToken);
+        const octokit = github.getOctokit(token);
+        const query = `
+    query($after: String) {
+      viewer {
+        followers(first: 100, after: $after) {
+          nodes {
+            databaseId
+            name
+            url
+            avatarUrl
+            login
+          }
+          pageInfo {
+            endCursor
+            startCursor
+            hasNextPage
+          }
+          totalCount
+        }
+      }
+    }
+  `;
         const followers = [];
         let result = undefined;
         do {
@@ -14518,10 +14515,53 @@ function run() {
             }));
             followers.push(...result.viewer.followers.nodes);
         } while (result.viewer.followers.pageInfo.hasNextPage);
-        fs_1.default.writeFileSync(followerFile, JSON.stringify(followers, null, 2));
-        const artifactClient = artifact.create();
-        const uploadResult = yield artifactClient.uploadArtifact('my-followers', [followerFile], '.');
+        yield fs_1.default.promises.writeFile(writeToFile, JSON.stringify(followers, null, 2), 'utf8');
+        return followers;
+    });
+}
+function downloadFollowerFile(client, artifactName) {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            const downloadResult = yield client.downloadArtifact(artifactName, './previousFollowers');
+            core.info(`Downloaded ${downloadResult.downloadPath} from ${downloadResult.artifactName}`);
+            return downloadResult.downloadPath;
+        }
+        catch (error) {
+            core.error(`Failed to download ${artifactName}, with error: ${error}`);
+            return;
+        }
+    });
+}
+function uploadFollowerFile(client, artifactName, file) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const uploadResult = yield client.uploadArtifact(artifactName, [file], '.');
         core.info(`Uploaded ${uploadResult.artifactItems.join(', ')} to ${uploadResult.artifactName}`);
+    });
+}
+function getFollowersChange(previous, current) {
+    const previousMap = new Map(previous.map((follower) => [follower.databaseId, follower]));
+    const currentMap = new Map(current.map((follower) => [follower.databaseId, follower]));
+    const newFollow = current.filter((follower) => !previousMap.has(follower.databaseId));
+    const unfollowed = previous.filter((follower) => !currentMap.has(follower.databaseId));
+    return { newFollow, unfollowed };
+}
+function run() {
+    return __awaiter(this, void 0, void 0, function* () {
+        const myToken = core.getInput('myToken', { required: true });
+        core.setSecret(myToken);
+        const followerArtifactName = 'my-followers';
+        const followerFile = 'followers.json';
+        const artifactClient = artifact.create();
+        const previousFollowerFile = yield downloadFollowerFile(artifactClient, followerArtifactName);
+        let previousFollowers = [];
+        if (previousFollowerFile) {
+            const content = yield fs_1.default.promises.readFile(previousFollowerFile, 'utf8');
+            previousFollowers = JSON.parse(content);
+        }
+        const currentFollowers = yield getFollowersFromGitHub(myToken, followerFile);
+        yield uploadFollowerFile(artifactClient, followerArtifactName, followerFile);
+        const { newFollow, unfollowed } = getFollowersChange(previousFollowers, currentFollowers);
+        core.info(`New followers: ${newFollow.length}, unfollowed: ${unfollowed.length}`);
     });
 }
 run()
