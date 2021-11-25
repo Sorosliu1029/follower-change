@@ -26,10 +26,9 @@ type Response = {
 }
 
 async function getFollowersFromGitHub(
-  token: string,
+  octokit: ReturnType<typeof github.getOctokit>,
   writeToFile: string,
 ): Promise<Follower[]> {
-  const octokit = github.getOctokit(token)
   const query = `
     query($after: String) {
       viewer {
@@ -72,23 +71,42 @@ async function getFollowersFromGitHub(
   return followers
 }
 
-async function downloadFollowerFile(
-  client: artifact.ArtifactClient,
+async function downloadPreviousFollowerFile(
+  octokit: ReturnType<typeof github.getOctokit>,
   artifactName: string,
 ): Promise<string | undefined> {
-  try {
-    const downloadResult = await client.downloadArtifact(
-      artifactName,
-      './previousFollowers',
-    )
-    core.info(
-      `Downloaded ${downloadResult.downloadPath} from ${downloadResult.artifactName}`,
-    )
-    return downloadResult.downloadPath
-  } catch (error) {
-    core.error(`Failed to download ${artifactName}, with error: ${error}`)
-    return
-  }
+  const resp = await octokit.request(
+    'GET /repos/{owner}/{repo}/actions/artifacts',
+    {
+      owner: github.context.repo.owner,
+      repo: github.context.repo.repo,
+      per_page: 3,
+      page: 1,
+    },
+  )
+
+  core.info(
+    `Found ${resp.data.total_count} artifacts, first: ${resp.data.artifacts[0].id}`,
+  )
+
+  const latestArtifact = resp.data.artifacts
+    .filter((a) => a.name === artifactName)
+    .sort((a, b) => {
+      if (a.created_at && b.created_at) {
+        return (
+          new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+        )
+      }
+      return a.id - b.id
+    })
+    .pop()
+
+  core.info(
+    `Latest artifact: ${latestArtifact?.id}, download url: ${latestArtifact?.archive_download_url}`,
+  )
+  // if (!latestArtifact) {
+  return
+  // }
 }
 
 async function uploadFollowerFile(
@@ -131,10 +149,11 @@ async function run() {
   const followerArtifactName = 'my-followers'
   const followerFile = 'followers.json'
 
+  const octokit = github.getOctokit(myToken)
   const artifactClient = artifact.create()
 
-  const previousFollowerFile = await downloadFollowerFile(
-    artifactClient,
+  const previousFollowerFile = await downloadPreviousFollowerFile(
+    octokit,
     followerArtifactName,
   )
   let previousFollowers: Follower[] = []
@@ -143,7 +162,7 @@ async function run() {
     previousFollowers = JSON.parse(content)
   }
 
-  const currentFollowers = await getFollowersFromGitHub(myToken, followerFile)
+  const currentFollowers = await getFollowersFromGitHub(octokit, followerFile)
   await uploadFollowerFile(artifactClient, followerArtifactName, followerFile)
 
   const { newFollow, unfollowed } = getFollowersChange(

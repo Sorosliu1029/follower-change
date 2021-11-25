@@ -14483,9 +14483,8 @@ const github = __importStar(__nccwpck_require__(5438));
 const core = __importStar(__nccwpck_require__(2186));
 const artifact = __importStar(__nccwpck_require__(2605));
 const fs_1 = __importDefault(__nccwpck_require__(7147));
-function getFollowersFromGitHub(token, writeToFile) {
+function getFollowersFromGitHub(octokit, writeToFile) {
     return __awaiter(this, void 0, void 0, function* () {
-        const octokit = github.getOctokit(token);
         const query = `
     query($after: String) {
       viewer {
@@ -14519,17 +14518,28 @@ function getFollowersFromGitHub(token, writeToFile) {
         return followers;
     });
 }
-function downloadFollowerFile(client, artifactName) {
+function downloadPreviousFollowerFile(octokit, artifactName) {
     return __awaiter(this, void 0, void 0, function* () {
-        try {
-            const downloadResult = yield client.downloadArtifact(artifactName, './previousFollowers');
-            core.info(`Downloaded ${downloadResult.downloadPath} from ${downloadResult.artifactName}`);
-            return downloadResult.downloadPath;
-        }
-        catch (error) {
-            core.error(`Failed to download ${artifactName}, with error: ${error}`);
-            return;
-        }
+        const resp = yield octokit.request('GET /repos/{owner}/{repo}/actions/artifacts', {
+            owner: github.context.repo.owner,
+            repo: github.context.repo.repo,
+            per_page: 3,
+            page: 1,
+        });
+        core.info(`Found ${resp.data.total_count} artifacts, first: ${resp.data.artifacts[0].id}`);
+        const latestArtifact = resp.data.artifacts
+            .filter((a) => a.name === artifactName)
+            .sort((a, b) => {
+            if (a.created_at && b.created_at) {
+                return (new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+            }
+            return a.id - b.id;
+        })
+            .pop();
+        core.info(`Latest artifact: ${latestArtifact === null || latestArtifact === void 0 ? void 0 : latestArtifact.id}, download url: ${latestArtifact === null || latestArtifact === void 0 ? void 0 : latestArtifact.archive_download_url}`);
+        // if (!latestArtifact) {
+        return;
+        // }
     });
 }
 function uploadFollowerFile(client, artifactName, file) {
@@ -14551,14 +14561,15 @@ function run() {
         core.setSecret(myToken);
         const followerArtifactName = 'my-followers';
         const followerFile = 'followers.json';
+        const octokit = github.getOctokit(myToken);
         const artifactClient = artifact.create();
-        const previousFollowerFile = yield downloadFollowerFile(artifactClient, followerArtifactName);
+        const previousFollowerFile = yield downloadPreviousFollowerFile(octokit, followerArtifactName);
         let previousFollowers = [];
         if (previousFollowerFile) {
             const content = yield fs_1.default.promises.readFile(previousFollowerFile, 'utf8');
             previousFollowers = JSON.parse(content);
         }
-        const currentFollowers = yield getFollowersFromGitHub(myToken, followerFile);
+        const currentFollowers = yield getFollowersFromGitHub(octokit, followerFile);
         yield uploadFollowerFile(artifactClient, followerArtifactName, followerFile);
         const { newFollow, unfollowed } = getFollowersChange(previousFollowers, currentFollowers);
         core.info(`New followers: ${newFollow.length}, unfollowed: ${unfollowed.length}`);
