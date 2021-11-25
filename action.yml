@@ -1,5 +1,8 @@
 name: "Check if follower change"
 description: "run as cron job, get follow and unfollow event"
+branding:
+  icon: 'user-check'  
+  color: 'green'
 inputs:
   myToken:
     description: "github personal access token"
