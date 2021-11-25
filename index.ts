@@ -1,6 +1,7 @@
 import * as github from '@actions/github'
 import * as core from '@actions/core'
 import * as artifact from '@actions/artifact'
+import AdmZip from 'adm-zip'
 import fs from 'fs'
 
 type Follower = {
@@ -71,42 +72,64 @@ async function getFollowersFromGitHub(
   return followers
 }
 
-async function downloadPreviousFollowerFile(
+async function getPreviousFollowers(
   octokit: ReturnType<typeof github.getOctokit>,
   artifactName: string,
-): Promise<string | undefined> {
-  const resp = await octokit.request(
-    'GET /repos/{owner}/{repo}/actions/artifacts',
-    {
-      owner: github.context.repo.owner,
-      repo: github.context.repo.repo,
-      per_page: 3,
-      page: 1,
-    },
-  )
+  followerFile: string,
+): Promise<Follower[]> {
+  const owner = github.context.repo.owner
+  const repo = github.context.repo.repo
+  try {
+    const listArtifactsResp = await octokit.request(
+      'GET /repos/{owner}/{repo}/actions/artifacts',
+      {
+        owner,
+        repo,
+        per_page: 10,
+        page: 1,
+      },
+    )
 
-  core.info(
-    `Found ${resp.data.total_count} artifacts, first: ${resp.data.artifacts[0].id}`,
-  )
+    const latestArtifact = listArtifactsResp.data.artifacts
+      .filter((a) => a.name === artifactName)
+      .sort((a, b) => {
+        if (a.created_at && b.created_at) {
+          return (
+            new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+          )
+        }
+        return a.id - b.id
+      })
+      .pop()
 
-  const latestArtifact = resp.data.artifacts
-    .filter((a) => a.name === artifactName)
-    .sort((a, b) => {
-      if (a.created_at && b.created_at) {
-        return (
-          new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-        )
-      }
-      return a.id - b.id
-    })
-    .pop()
+    if (!latestArtifact) {
+      return []
+    }
 
-  core.info(
-    `Latest artifact: ${latestArtifact?.id}, download url: ${latestArtifact?.archive_download_url}`,
-  )
-  // if (!latestArtifact) {
-  return
-  // }
+    core.info(`Latest artifact: ${latestArtifact?.id}`)
+
+    const downloadResp = await octokit.request(
+      'GET /repos/{owner}/{repo}/actions/artifacts/{artifact_id}/{archive_format}',
+      {
+        owner,
+        repo,
+        artifact_id: latestArtifact.id,
+        archive_format: 'zip',
+      },
+    )
+
+    const adm = new AdmZip(Buffer.from(downloadResp.data as ArrayBuffer))
+    const entry = adm.getEntry(followerFile)
+    if (!entry) {
+      return []
+    }
+
+    return JSON.parse(entry.getData().toString('utf8'))
+  } catch (error) {
+    core.error(error as Error)
+  }
+
+  return []
 }
 
 async function uploadFollowerFile(
@@ -152,15 +175,11 @@ async function run() {
   const octokit = github.getOctokit(myToken)
   const artifactClient = artifact.create()
 
-  const previousFollowerFile = await downloadPreviousFollowerFile(
+  const previousFollowers = await getPreviousFollowers(
     octokit,
     followerArtifactName,
+    followerFile,
   )
-  let previousFollowers: Follower[] = []
-  if (previousFollowerFile) {
-    const content = await fs.promises.readFile(previousFollowerFile, 'utf8')
-    previousFollowers = JSON.parse(content)
-  }
 
   const currentFollowers = await getFollowersFromGitHub(octokit, followerFile)
   await uploadFollowerFile(artifactClient, followerArtifactName, followerFile)
