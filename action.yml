@@ -1,9 +1,14 @@
-name: 'Check and notify follower change'
-description: 'run as cron job, notify follow and unfollow event'
+name: "Check if follower change"
+description: "run as cron job, get follow and unfollow event"
 inputs:
   myToken:
-    description: 'github personal access token'
+    description: "github personal access token"
     required: true
+outputs:
+  changed:
+    description: "whether follower changed or not"
+  markdown:
+    description: "markdown for follower change info"
 runs:
-  using: 'node12'
-  main: 'dist/index.js'
+  using: "node12"
+  main: "dist/index.js"

@@ -1,25 +1,26 @@
-name: "units-test"
+name: "test"
 on:
   pull_request:
   push:
     branches:
       - main
-      - 'releases/*'
+      - "releases/*"
 
 jobs:
-  # unit tests
-  units:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v2
-    - run: npm ci
-    - run: npm test
-
   # test action works running from the graph
   test:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
-    - uses: ./
-      with:
-        myToken: ${{ secrets.MY_TOKEN }}
+      - uses: actions/checkout@v2
+      - name: get follower change
+        id: followerChange
+        uses: ./
+        with:
+          myToken: ${{ secrets.MY_TOKEN }}
+      - name: Get the output
+        run: >
+          printf "
+          is changed: ${{ steps.followerChange.outputs.changed }}\n
+          markdown:\n
+          ${{ steps.followerChange.outputs.markdown }}
+          "

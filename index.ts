@@ -175,32 +175,21 @@ function toMarkdown(
   followers: Follower[],
   unfollowers: Follower[],
 ): string {
-  const followersMarkdown = followers
-    .map(
-      (follower) =>
-        `- ![](${follower.avatarUrl}) [${follower.name || follower.login}](${
-          follower.url
-        })`,
-    )
-    .join('\n')
-  const unfollowersMarkdown = unfollowers
-    .map(
-      (follower) =>
-        `- ![](${follower.avatarUrl}) [${follower.name || follower.login}](${
-          follower.url
-        })`,
-    )
-    .join('\n')
+  let markdown = `# You have ${totalCount} followers now`
 
-  return `
-  # You have ${totalCount} followers now
+  const userMarkdown = (follower: Follower) =>
+    `- ![](${follower.avatarUrl}) [${follower.name || follower.login}](${
+      follower.url
+    })`
 
-  ## New followers:
-  ${followersMarkdown}
-  
-  ## Unfollowers:
-  ${unfollowersMarkdown}
-  `
+  if (followers.length) {
+    markdown += `\n### New followers\n${followers.map(userMarkdown).join('\n')}`
+  }
+  if (unfollowers.length) {
+    markdown += `\n### Unfollowers\n${unfollowers.map(userMarkdown).join('\n')}`
+  }
+
+  return markdown
 }
 
 async function run() {
@@ -229,12 +218,13 @@ async function run() {
     currentFollowers,
   )
   core.info(
-    `Change: \u001b[38;5;10m${followers.length} followers, \u001b[38;5;11m${unfollowers.length} unfollowers`,
+    `Follower change: \u001b[38;5;10m${followers.length} new followers, \u001b[38;5;11m${unfollowers.length} unfollowers`,
   )
 
-  core.info(toMarkdown(totalCount, followers, unfollowers))
+  core.setOutput('changed', followers.length > 0 || unfollowers.length > 0)
+  core.setOutput('markdown', toMarkdown(totalCount, followers, unfollowers))
 }
 
 run()
-  .then(() => core.notice('job done'))
+  .then(() => core.notice('Get follower change, done'))
   .catch((e) => core.setFailed(e.message))

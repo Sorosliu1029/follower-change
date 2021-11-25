@@ -17417,21 +17417,15 @@ function getFollowersChange(previous, current) {
     return { followers, unfollowers };
 }
 function toMarkdown(totalCount, followers, unfollowers) {
-    const followersMarkdown = followers
-        .map((follower) => `- ![](${follower.avatarUrl}) [${follower.name || follower.login}](${follower.url})`)
-        .join('\n');
-    const unfollowersMarkdown = unfollowers
-        .map((follower) => `- ![](${follower.avatarUrl}) [${follower.name || follower.login}](${follower.url})`)
-        .join('\n');
-    return `
-  # You have ${totalCount} followers now
-
-  ## New followers:
-  ${followersMarkdown}
-  
-  ## Unfollowers:
-  ${unfollowersMarkdown}
-  `;
+    let markdown = `# You have ${totalCount} followers now`;
+    const userMarkdown = (follower) => `- ![](${follower.avatarUrl}) [${follower.name || follower.login}](${follower.url})`;
+    if (followers.length) {
+        markdown += `\n### New followers\n${followers.map(userMarkdown).join('\n')}`;
+    }
+    if (unfollowers.length) {
+        markdown += `\n### Unfollowers\n${unfollowers.map(userMarkdown).join('\n')}`;
+    }
+    return markdown;
 }
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
@@ -17445,12 +17439,13 @@ function run() {
         const { followers: currentFollowers, totalCount } = yield getFollowersFromGitHub(octokit, followerFile);
         yield uploadFollowerFile(artifactClient, followerArtifactName, followerFile);
         const { followers, unfollowers } = getFollowersChange(previousFollowers, currentFollowers);
-        core.info(`Change: \u001b[38;5;10m${followers.length} followers, \u001b[38;5;11m${unfollowers.length} unfollowers`);
-        core.info(toMarkdown(totalCount, followers, unfollowers));
+        core.info(`Follower change: \u001b[38;5;10m${followers.length} new followers, \u001b[38;5;11m${unfollowers.length} unfollowers`);
+        core.setOutput('changed', followers.length > 0 || unfollowers.length > 0);
+        core.setOutput('markdown', toMarkdown(totalCount, followers, unfollowers));
     });
 }
 run()
-    .then(() => core.notice('job done'))
+    .then(() => core.notice('Get follower change, done'))
     .catch((e) => core.setFailed(e.message));
 
 
