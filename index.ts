@@ -221,7 +221,10 @@ async function run() {
     `Follower change: \u001b[38;5;10m${followers.length} new followers, \u001b[38;5;11m${unfollowers.length} unfollowers`,
   )
 
-  core.setOutput('changed', followers.length > 0 || unfollowers.length > 0)
+  const changed = followers.length > 0 || unfollowers.length > 0
+  core.info(`Changed: ${changed}`)
+
+  core.setOutput('changed', changed)
   core.setOutput('markdown', toMarkdown(totalCount, followers, unfollowers))
 }
 

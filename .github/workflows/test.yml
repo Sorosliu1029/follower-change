@@ -25,7 +25,7 @@ jobs:
           "
       - name: email me
         uses: dawidd6/action-send-mail@v3
-        if: steps.followerChange.outputs.changed == true
+        if: steps.followerChange.outputs.changed == 'true'
         with:
           server_address: smtp.qq.com
           server_port: 465
