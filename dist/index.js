@@ -17352,7 +17352,8 @@ function getFollowersFromGitHub(octokit, writeToFile) {
             }));
             followers.push(...result.viewer.followers.nodes);
         } while (result.viewer.followers.pageInfo.hasNextPage);
-        yield fs_1.default.promises.writeFile(writeToFile, JSON.stringify(followers, null, 2), 'utf8');
+        const j = { snapshotAt: new Date(), followers };
+        yield fs_1.default.promises.writeFile(writeToFile, JSON.stringify(j, null, 2), 'utf8');
         return {
             followers,
             totalCount: result ? result.viewer.followers.totalCount : 0,

@@ -27,6 +27,8 @@ type Response = {
   }
 }
 
+type JsonStructure = { snapshotAt: Date; followers: Follower[] }
+
 async function getFollowersFromGitHub(
   octokit: ReturnType<typeof github.getOctokit>,
   writeToFile: string,
@@ -64,11 +66,8 @@ async function getFollowersFromGitHub(
     followers.push(...result.viewer.followers.nodes)
   } while (result.viewer.followers.pageInfo.hasNextPage)
 
-  await fs.promises.writeFile(
-    writeToFile,
-    JSON.stringify(followers, null, 2),
-    'utf8',
-  )
+  const j: JsonStructure = { snapshotAt: new Date(), followers }
+  await fs.promises.writeFile(writeToFile, JSON.stringify(j, null, 2), 'utf8')
 
   return {
     followers,
@@ -128,9 +127,7 @@ async function getSnapshotFollowers(
       return { followers: [], isFirstRun: false }
     }
 
-    const j: { snapshotAt: Date; followers: Follower[] } = JSON.parse(
-      entry.getData().toString('utf8'),
-    )
+    const j: JsonStructure = JSON.parse(entry.getData().toString('utf8'))
     if (!('snapshotAt' in j && 'followers' in j)) {
       throw new Error('Invalid snapshot file')
     }
