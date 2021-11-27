@@ -215,15 +215,33 @@ async function run() {
   core.setOutput('shouldNotify', shouldNotify)
   core.setOutput(
     'markdown',
-    outputUtils.toMarkdown(snapshotAt, totalCount, followers, unfollowers),
+    outputUtils.toMarkdown(
+      github.context.repo.owner,
+      snapshotAt,
+      totalCount,
+      followers,
+      unfollowers,
+    ),
   )
   core.setOutput(
     'plainText',
-    outputUtils.toPlainText(snapshotAt, totalCount, followers, unfollowers),
+    outputUtils.toPlainText(
+      github.context.repo.owner,
+      snapshotAt,
+      totalCount,
+      followers,
+      unfollowers,
+    ),
   )
   core.setOutput(
     'html',
-    outputUtils.toHtml(snapshotAt, totalCount, followers, unfollowers),
+    outputUtils.toHtml(
+      github.context.repo.owner,
+      snapshotAt,
+      totalCount,
+      followers,
+      unfollowers,
+    ),
   )
 }
 

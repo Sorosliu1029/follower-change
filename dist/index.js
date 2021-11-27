@@ -17443,9 +17443,9 @@ function run() {
         core.info(`Should notify: ${shouldNotify}`);
         core.setOutput('changed', changed);
         core.setOutput('shouldNotify', shouldNotify);
-        core.setOutput('markdown', outputUtils.toMarkdown(snapshotAt, totalCount, followers, unfollowers));
-        core.setOutput('plainText', outputUtils.toPlainText(snapshotAt, totalCount, followers, unfollowers));
-        core.setOutput('html', outputUtils.toHtml(snapshotAt, totalCount, followers, unfollowers));
+        core.setOutput('markdown', outputUtils.toMarkdown(github.context.repo.owner, snapshotAt, totalCount, followers, unfollowers));
+        core.setOutput('plainText', outputUtils.toPlainText(github.context.repo.owner, snapshotAt, totalCount, followers, unfollowers));
+        core.setOutput('html', outputUtils.toHtml(github.context.repo.owner, snapshotAt, totalCount, followers, unfollowers));
     });
 }
 run()
@@ -17462,13 +17462,13 @@ run()
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.toHtml = exports.toPlainText = exports.toMarkdown = void 0;
-function toMarkdown(snapshotAt, totalCount, followers, unfollowers) {
-    let markdown = `# You have ${totalCount} followers now`;
+function toMarkdown(myGitHubLoginId, snapshotAt, totalCount, followers, unfollowers) {
+    let markdown = `# You have ${totalCount} followers now. [Go to followers page](https://github.com/${myGitHubLoginId}?tab=followers)`;
     const userMarkdown = (follower) => `- [${follower.name || follower.login}](${follower.url})`;
     if (followers.length) {
         markdown += `\n### New followers\n${followers.map(userMarkdown).join('\n')}`;
     }
-    else {
+    else if (unfollowers.length) {
         markdown += '\n### No new followers';
     }
     if (unfollowers.length) {
@@ -17480,13 +17480,13 @@ function toMarkdown(snapshotAt, totalCount, followers, unfollowers) {
     return markdown;
 }
 exports.toMarkdown = toMarkdown;
-function toPlainText(snapshotAt, totalCount, followers, unfollowers) {
-    let text = `You have ${totalCount} followers now`;
+function toPlainText(myGitHubLoginId, snapshotAt, totalCount, followers, unfollowers) {
+    let text = `You have ${totalCount} followers now. Go to followers page: https://github.com/${myGitHubLoginId}?tab=followers`;
     const userText = (follower) => `- ${follower.name || follower.login} (${follower.url})`;
     if (followers.length) {
         text += `\nNew followers:\n${followers.map(userText).join('\n')}`;
     }
-    else {
+    else if (unfollowers.length) {
         text += '\nNo new followers';
     }
     if (unfollowers.length) {
@@ -17498,13 +17498,19 @@ function toPlainText(snapshotAt, totalCount, followers, unfollowers) {
     return text;
 }
 exports.toPlainText = toPlainText;
-function toHtml(snapshotAt, totalCount, followers, unfollowers) {
-    let html = `<h1>You have ${totalCount} followers now</h1>`;
-    const userHtml = (follower) => `<li><a href="${follower.url}">${follower.name || follower.login}</a></li>`;
+function toHtml(myGitHubLoginId, snapshotAt, totalCount, followers, unfollowers) {
+    let html = `<h1>You have ${totalCount} followers now. <a href="https://github.com/${myGitHubLoginId}?tab=followers">Go to followers page</a></h1>`;
+    const userHtml = (follower) => `<li>
+      <a href="${follower.url}">
+        <img src="${follower.avatarUrl}" width="50" height="50"
+          style="border-radius: 50% !important;box-shadow: 0 0 0 1px">
+      </a>
+      <a href="${follower.url}">${follower.name || follower.login}</a>
+    </li>`;
     if (followers.length) {
         html += `<h2>New followers</h2><ul>${followers.map(userHtml).join('')}</ul>`;
     }
-    else {
+    else if (unfollowers.length) {
         html += '<h2>No new followers</h2>';
     }
     if (unfollowers.length) {
