@@ -187,9 +187,7 @@ function toMarkdown(
   let markdown = `# You have ${totalCount} followers now`
 
   const userMarkdown = (follower: Follower) =>
-    `- ![](${follower.avatarUrl}) [${follower.name || follower.login}](${
-      follower.url
-    })`
+    `- [${follower.name || follower.login}](${follower.url})`
 
   if (followers.length) {
     markdown += `\n### New followers\n${followers.map(userMarkdown).join('\n')}`
@@ -206,6 +204,33 @@ function toMarkdown(
   }
 
   return markdown
+}
+
+function toPlainText(
+  snapshotAt: Date | undefined,
+  totalCount: number,
+  followers: Follower[],
+  unfollowers: Follower[],
+): string {
+  let text = `You have ${totalCount} followers now`
+  const userText = (follower: Follower) =>
+    `- ${follower.name || follower.login} (${follower.url})`
+
+  if (followers.length) {
+    text += `\nNew followers:\n${followers.map(userText).join('\n')}`
+  } else {
+    text += '\nNo new followers'
+  }
+
+  if (unfollowers.length) {
+    text += `\nUnfollowers:\n${unfollowers.map(userText).join('\n')}`
+  }
+
+  if (snapshotAt && (followers.length || unfollowers.length)) {
+    text += `\nChanges since ${snapshotAt.toISOString()}`
+  }
+
+  return text
 }
 
 async function run() {
@@ -248,6 +273,10 @@ async function run() {
   core.setOutput(
     'markdown',
     toMarkdown(snapshotAt, totalCount, followers, unfollowers),
+  )
+  core.setOutput(
+    'plainText',
+    toPlainText(snapshotAt, totalCount, followers, unfollowers),
   )
 }
 

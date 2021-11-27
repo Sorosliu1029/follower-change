@@ -17424,7 +17424,7 @@ function getFollowersChange(previous, current) {
 }
 function toMarkdown(snapshotAt, totalCount, followers, unfollowers) {
     let markdown = `# You have ${totalCount} followers now`;
-    const userMarkdown = (follower) => `- ![](${follower.avatarUrl}) [${follower.name || follower.login}](${follower.url})`;
+    const userMarkdown = (follower) => `- [${follower.name || follower.login}](${follower.url})`;
     if (followers.length) {
         markdown += `\n### New followers\n${followers.map(userMarkdown).join('\n')}`;
     }
@@ -17438,6 +17438,23 @@ function toMarkdown(snapshotAt, totalCount, followers, unfollowers) {
         markdown += `\nChanges since ${snapshotAt.toISOString()}`;
     }
     return markdown;
+}
+function toPlainText(snapshotAt, totalCount, followers, unfollowers) {
+    let text = `You have ${totalCount} followers now`;
+    const userText = (follower) => `- ${follower.name || follower.login} (${follower.url})`;
+    if (followers.length) {
+        text += `\nNew followers:\n${followers.map(userText).join('\n')}`;
+    }
+    else {
+        text += '\nNo new followers';
+    }
+    if (unfollowers.length) {
+        text += `\nUnfollowers:\n${unfollowers.map(userText).join('\n')}`;
+    }
+    if (snapshotAt && (followers.length || unfollowers.length)) {
+        text += `\nChanges since ${snapshotAt.toISOString()}`;
+    }
+    return text;
 }
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
@@ -17459,6 +17476,7 @@ function run() {
         core.setOutput('changed', changed);
         core.setOutput('shouldNotify', shouldNotify);
         core.setOutput('markdown', toMarkdown(snapshotAt, totalCount, followers, unfollowers));
+        core.setOutput('plainText', toPlainText(snapshotAt, totalCount, followers, unfollowers));
     });
 }
 run()
