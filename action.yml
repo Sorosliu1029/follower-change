@@ -10,6 +10,8 @@ inputs:
 outputs:
   changed:
     description: "whether follower changed or not"
+  shouldNotify:
+    description: "skip notification when no change or first run"
   markdown:
     description: "markdown for follower change info"
 runs:

@@ -75,11 +75,11 @@ async function getFollowersFromGitHub(
   }
 }
 
-async function getPreviousFollowers(
+async function getSnapshotFollowers(
   octokit: ReturnType<typeof github.getOctokit>,
   artifactName: string,
   followerFile: string,
-): Promise<Follower[]> {
+): Promise<{ snapshotAt?: Date; followers: Follower[]; isFirstRun: boolean }> {
   const owner = github.context.repo.owner
   const repo = github.context.repo.repo
   try {
@@ -106,7 +106,7 @@ async function getPreviousFollowers(
       .pop()
 
     if (!latestArtifact) {
-      return []
+      return { followers: [], isFirstRun: true }
     }
 
     core.info(`Latest artifact: ${latestArtifact?.id}`)
@@ -124,15 +124,25 @@ async function getPreviousFollowers(
     const adm = new AdmZip(Buffer.from(downloadResp.data as ArrayBuffer))
     const entry = adm.getEntry(followerFile)
     if (!entry) {
-      return []
+      return { followers: [], isFirstRun: false }
     }
 
-    return JSON.parse(entry.getData().toString('utf8'))
+    const j: { snapshotAt: Date; followers: Follower[] } = JSON.parse(
+      entry.getData().toString('utf8'),
+    )
+    if (!('snapshotAt' in j && 'followers' in j)) {
+      throw new Error('Invalid snapshot file')
+    }
+    return {
+      snapshotAt: new Date(j.snapshotAt),
+      followers: j.followers,
+      isFirstRun: false,
+    }
   } catch (error) {
     core.error(error as Error)
   }
 
-  return []
+  return { followers: [], isFirstRun: false }
 }
 
 async function uploadFollowerFile(
@@ -169,6 +179,7 @@ function getFollowersChange(
 }
 
 function toMarkdown(
+  snapshotAt: Date | undefined,
   totalCount: number,
   followers: Follower[],
   unfollowers: Follower[],
@@ -182,9 +193,16 @@ function toMarkdown(
 
   if (followers.length) {
     markdown += `\n### New followers\n${followers.map(userMarkdown).join('\n')}`
+  } else {
+    markdown += '\n### No new followers'
   }
+
   if (unfollowers.length) {
     markdown += `\n### Unfollowers\n${unfollowers.map(userMarkdown).join('\n')}`
+  }
+
+  if (snapshotAt && (followers.length || unfollowers.length)) {
+    markdown += `\nChanges since ${snapshotAt.toISOString()}`
   }
 
   return markdown
@@ -200,11 +218,11 @@ async function run() {
   const octokit = github.getOctokit(myToken)
   const artifactClient = artifact.create()
 
-  const previousFollowers = await getPreviousFollowers(
-    octokit,
-    followerArtifactName,
-    followerFile,
-  )
+  const {
+    snapshotAt,
+    followers: previousFollowers,
+    isFirstRun,
+  } = await getSnapshotFollowers(octokit, followerArtifactName, followerFile)
 
   const { followers: currentFollowers, totalCount } =
     await getFollowersFromGitHub(octokit, followerFile)
@@ -222,8 +240,15 @@ async function run() {
   const changed = followers.length > 0 || unfollowers.length > 0
   core.info(`Changed: ${changed}`)
 
+  const shouldNotify = changed && !isFirstRun
+  core.info(`Should notify: ${shouldNotify}`)
+
   core.setOutput('changed', changed)
-  core.setOutput('markdown', toMarkdown(totalCount, followers, unfollowers))
+  core.setOutput('shouldNotify', shouldNotify)
+  core.setOutput(
+    'markdown',
+    toMarkdown(snapshotAt, totalCount, followers, unfollowers),
+  )
 }
 
 run()

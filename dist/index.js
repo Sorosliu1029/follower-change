@@ -17358,7 +17358,7 @@ function getFollowersFromGitHub(octokit, writeToFile) {
         };
     });
 }
-function getPreviousFollowers(octokit, artifactName, followerFile) {
+function getSnapshotFollowers(octokit, artifactName, followerFile) {
     return __awaiter(this, void 0, void 0, function* () {
         const owner = github.context.repo.owner;
         const repo = github.context.repo.repo;
@@ -17379,7 +17379,7 @@ function getPreviousFollowers(octokit, artifactName, followerFile) {
             })
                 .pop();
             if (!latestArtifact) {
-                return [];
+                return { followers: [], isFirstRun: true };
             }
             core.info(`Latest artifact: ${latestArtifact === null || latestArtifact === void 0 ? void 0 : latestArtifact.id}`);
             const downloadResp = yield octokit.request('GET /repos/{owner}/{repo}/actions/artifacts/{artifact_id}/{archive_format}', {
@@ -17391,14 +17391,22 @@ function getPreviousFollowers(octokit, artifactName, followerFile) {
             const adm = new adm_zip_1.default(Buffer.from(downloadResp.data));
             const entry = adm.getEntry(followerFile);
             if (!entry) {
-                return [];
+                return { followers: [], isFirstRun: false };
             }
-            return JSON.parse(entry.getData().toString('utf8'));
+            const j = JSON.parse(entry.getData().toString('utf8'));
+            if (!('snapshotAt' in j && 'followers' in j)) {
+                throw new Error('Invalid snapshot file');
+            }
+            return {
+                snapshotAt: new Date(j.snapshotAt),
+                followers: j.followers,
+                isFirstRun: false,
+            };
         }
         catch (error) {
             core.error(error);
         }
-        return [];
+        return { followers: [], isFirstRun: false };
     });
 }
 function uploadFollowerFile(client, artifactName, file) {
@@ -17414,14 +17422,20 @@ function getFollowersChange(previous, current) {
     const unfollowers = previous.filter((follower) => !currentMap.has(follower.databaseId));
     return { followers, unfollowers };
 }
-function toMarkdown(totalCount, followers, unfollowers) {
+function toMarkdown(snapshotAt, totalCount, followers, unfollowers) {
     let markdown = `# You have ${totalCount} followers now`;
     const userMarkdown = (follower) => `- ![](${follower.avatarUrl}) [${follower.name || follower.login}](${follower.url})`;
     if (followers.length) {
         markdown += `\n### New followers\n${followers.map(userMarkdown).join('\n')}`;
     }
+    else {
+        markdown += '\n### No new followers';
+    }
     if (unfollowers.length) {
         markdown += `\n### Unfollowers\n${unfollowers.map(userMarkdown).join('\n')}`;
+    }
+    if (snapshotAt && (followers.length || unfollowers.length)) {
+        markdown += `\nChanges since ${snapshotAt.toISOString()}`;
     }
     return markdown;
 }
@@ -17433,15 +17447,18 @@ function run() {
         const followerFile = 'followers.json';
         const octokit = github.getOctokit(myToken);
         const artifactClient = artifact.create();
-        const previousFollowers = yield getPreviousFollowers(octokit, followerArtifactName, followerFile);
+        const { snapshotAt, followers: previousFollowers, isFirstRun, } = yield getSnapshotFollowers(octokit, followerArtifactName, followerFile);
         const { followers: currentFollowers, totalCount } = yield getFollowersFromGitHub(octokit, followerFile);
         yield uploadFollowerFile(artifactClient, followerArtifactName, followerFile);
         const { followers, unfollowers } = getFollowersChange(previousFollowers, currentFollowers);
         core.info(`Follower change: \u001b[38;5;10m${followers.length} new followers, \u001b[38;5;11m${unfollowers.length} unfollowers`);
         const changed = followers.length > 0 || unfollowers.length > 0;
         core.info(`Changed: ${changed}`);
+        const shouldNotify = changed && !isFirstRun;
+        core.info(`Should notify: ${shouldNotify}`);
         core.setOutput('changed', changed);
-        core.setOutput('markdown', toMarkdown(totalCount, followers, unfollowers));
+        core.setOutput('shouldNotify', shouldNotify);
+        core.setOutput('markdown', toMarkdown(snapshotAt, totalCount, followers, unfollowers));
     });
 }
 run()
