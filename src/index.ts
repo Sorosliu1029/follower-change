@@ -3,8 +3,9 @@ import * as core from '@actions/core'
 import * as artifact from '@actions/artifact'
 import AdmZip from 'adm-zip'
 import fs from 'fs'
+import * as outputUtils from './output-utils'
 
-type Follower = {
+export type Follower = {
   databaseId: number
   login: string
   avatarUrl: string
@@ -178,61 +179,6 @@ function getFollowersChange(
   return { followers, unfollowers }
 }
 
-function toMarkdown(
-  snapshotAt: Date | undefined,
-  totalCount: number,
-  followers: Follower[],
-  unfollowers: Follower[],
-): string {
-  let markdown = `# You have ${totalCount} followers now`
-
-  const userMarkdown = (follower: Follower) =>
-    `- [${follower.name || follower.login}](${follower.url})`
-
-  if (followers.length) {
-    markdown += `\n### New followers\n${followers.map(userMarkdown).join('\n')}`
-  } else {
-    markdown += '\n### No new followers'
-  }
-
-  if (unfollowers.length) {
-    markdown += `\n### Unfollowers\n${unfollowers.map(userMarkdown).join('\n')}`
-  }
-
-  if (snapshotAt && (followers.length || unfollowers.length)) {
-    markdown += `\nChanges since ${snapshotAt.toISOString()}`
-  }
-
-  return markdown
-}
-
-function toPlainText(
-  snapshotAt: Date | undefined,
-  totalCount: number,
-  followers: Follower[],
-  unfollowers: Follower[],
-): string {
-  let text = `You have ${totalCount} followers now`
-  const userText = (follower: Follower) =>
-    `- ${follower.name || follower.login} (${follower.url})`
-
-  if (followers.length) {
-    text += `\nNew followers:\n${followers.map(userText).join('\n')}`
-  } else {
-    text += '\nNo new followers'
-  }
-
-  if (unfollowers.length) {
-    text += `\nUnfollowers:\n${unfollowers.map(userText).join('\n')}`
-  }
-
-  if (snapshotAt && (followers.length || unfollowers.length)) {
-    text += `\nChanges since ${snapshotAt.toISOString()}`
-  }
-
-  return text
-}
-
 async function run() {
   const myToken = core.getInput('myToken', { required: true })
   core.setSecret(myToken)
@@ -272,11 +218,15 @@ async function run() {
   core.setOutput('shouldNotify', shouldNotify)
   core.setOutput(
     'markdown',
-    toMarkdown(snapshotAt, totalCount, followers, unfollowers),
+    outputUtils.toMarkdown(snapshotAt, totalCount, followers, unfollowers),
   )
   core.setOutput(
     'plainText',
-    toPlainText(snapshotAt, totalCount, followers, unfollowers),
+    outputUtils.toPlainText(snapshotAt, totalCount, followers, unfollowers),
+  )
+  core.setOutput(
+    'html',
+    outputUtils.toHtml(snapshotAt, totalCount, followers, unfollowers),
   )
 }
 

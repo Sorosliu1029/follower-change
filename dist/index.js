@@ -17320,6 +17320,7 @@ const core = __importStar(__nccwpck_require__(2186));
 const artifact = __importStar(__nccwpck_require__(2605));
 const adm_zip_1 = __importDefault(__nccwpck_require__(6761));
 const fs_1 = __importDefault(__nccwpck_require__(7147));
+const outputUtils = __importStar(__nccwpck_require__(7046));
 function getFollowersFromGitHub(octokit, writeToFile) {
     return __awaiter(this, void 0, void 0, function* () {
         const query = `
@@ -17422,40 +17423,6 @@ function getFollowersChange(previous, current) {
     const unfollowers = previous.filter((follower) => !currentMap.has(follower.databaseId));
     return { followers, unfollowers };
 }
-function toMarkdown(snapshotAt, totalCount, followers, unfollowers) {
-    let markdown = `# You have ${totalCount} followers now`;
-    const userMarkdown = (follower) => `- [${follower.name || follower.login}](${follower.url})`;
-    if (followers.length) {
-        markdown += `\n### New followers\n${followers.map(userMarkdown).join('\n')}`;
-    }
-    else {
-        markdown += '\n### No new followers';
-    }
-    if (unfollowers.length) {
-        markdown += `\n### Unfollowers\n${unfollowers.map(userMarkdown).join('\n')}`;
-    }
-    if (snapshotAt && (followers.length || unfollowers.length)) {
-        markdown += `\nChanges since ${snapshotAt.toISOString()}`;
-    }
-    return markdown;
-}
-function toPlainText(snapshotAt, totalCount, followers, unfollowers) {
-    let text = `You have ${totalCount} followers now`;
-    const userText = (follower) => `- ${follower.name || follower.login} (${follower.url})`;
-    if (followers.length) {
-        text += `\nNew followers:\n${followers.map(userText).join('\n')}`;
-    }
-    else {
-        text += '\nNo new followers';
-    }
-    if (unfollowers.length) {
-        text += `\nUnfollowers:\n${unfollowers.map(userText).join('\n')}`;
-    }
-    if (snapshotAt && (followers.length || unfollowers.length)) {
-        text += `\nChanges since ${snapshotAt.toISOString()}`;
-    }
-    return text;
-}
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         const myToken = core.getInput('myToken', { required: true });
@@ -17475,13 +17442,79 @@ function run() {
         core.info(`Should notify: ${shouldNotify}`);
         core.setOutput('changed', changed);
         core.setOutput('shouldNotify', shouldNotify);
-        core.setOutput('markdown', toMarkdown(snapshotAt, totalCount, followers, unfollowers));
-        core.setOutput('plainText', toPlainText(snapshotAt, totalCount, followers, unfollowers));
+        core.setOutput('markdown', outputUtils.toMarkdown(snapshotAt, totalCount, followers, unfollowers));
+        core.setOutput('plainText', outputUtils.toPlainText(snapshotAt, totalCount, followers, unfollowers));
+        core.setOutput('html', outputUtils.toHtml(snapshotAt, totalCount, followers, unfollowers));
     });
 }
 run()
     .then(() => core.notice('Get follower change, done'))
     .catch((e) => core.setFailed(e.message));
+
+
+/***/ }),
+
+/***/ 7046:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.toHtml = exports.toPlainText = exports.toMarkdown = void 0;
+function toMarkdown(snapshotAt, totalCount, followers, unfollowers) {
+    let markdown = `# You have ${totalCount} followers now`;
+    const userMarkdown = (follower) => `- [${follower.name || follower.login}](${follower.url})`;
+    if (followers.length) {
+        markdown += `\n### New followers\n${followers.map(userMarkdown).join('\n')}`;
+    }
+    else {
+        markdown += '\n### No new followers';
+    }
+    if (unfollowers.length) {
+        markdown += `\n### Unfollowers\n${unfollowers.map(userMarkdown).join('\n')}`;
+    }
+    if (snapshotAt && (followers.length || unfollowers.length)) {
+        markdown += `\nChanges since ${snapshotAt.toISOString()}`;
+    }
+    return markdown;
+}
+exports.toMarkdown = toMarkdown;
+function toPlainText(snapshotAt, totalCount, followers, unfollowers) {
+    let text = `You have ${totalCount} followers now`;
+    const userText = (follower) => `- ${follower.name || follower.login} (${follower.url})`;
+    if (followers.length) {
+        text += `\nNew followers:\n${followers.map(userText).join('\n')}`;
+    }
+    else {
+        text += '\nNo new followers';
+    }
+    if (unfollowers.length) {
+        text += `\nUnfollowers:\n${unfollowers.map(userText).join('\n')}`;
+    }
+    if (snapshotAt && (followers.length || unfollowers.length)) {
+        text += `\nChanges since ${snapshotAt.toISOString()}`;
+    }
+    return text;
+}
+exports.toPlainText = toPlainText;
+function toHtml(snapshotAt, totalCount, followers, unfollowers) {
+    let html = `<h1>You have ${totalCount} followers now</h1>`;
+    const userHtml = (follower) => `<li><a href="${follower.url}">${follower.name || follower.login}</a></li>`;
+    if (followers.length) {
+        html += `<h2>New followers</h2><ul>${followers.map(userHtml).join('')}</ul>`;
+    }
+    else {
+        html += '<h2>No new followers</h2>';
+    }
+    if (unfollowers.length) {
+        html += `<h2>Unfollowers</h2><ul>${unfollowers.map(userHtml).join('')}</ul>`;
+    }
+    if (snapshotAt && (followers.length || unfollowers.length)) {
+        html += `<p>Changes since ${snapshotAt.toISOString()}</p>`;
+    }
+    return html;
+}
+exports.toHtml = toHtml;
 
 
 /***/ }),

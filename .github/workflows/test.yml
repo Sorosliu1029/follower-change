@@ -20,19 +20,14 @@ jobs:
         run: >
           printf "
           is changed: ${{ steps.followerChange.outputs.changed }}\n
+          should notify: ${{ steps.followerChange.outputs.shouldNotify }}\n
+
           markdown:\n
           ${{ steps.followerChange.outputs.markdown }}
+
+          plainText:\n
+          ${{ steps.followerChange.outputs.plainText }}
+
+          html:\n
+          ${{ steps.followerChange.outputs.html }}
           "
-      - name: email me
-        uses: dawidd6/action-send-mail@v3
-        if: steps.followerChange.outputs.changed == 'true'
-        with:
-          server_address: smtp.qq.com
-          server_port: 465
-          username: ${{ secrets.MAIL_USERNAME }}
-          password: ${{ secrets.MAIL_PASSWORD }}
-          subject: GitHub Follower Change
-          from: Follower Change Notifier
-          to: ${{ secrets.MY_EMAIL }}
-          html_body: ${{ steps.followerChange.outputs.markdown }}
-          convert_markdown: true
