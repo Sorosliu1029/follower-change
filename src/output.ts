@@ -7,7 +7,7 @@ export function toMarkdown(
   followers: Follower[],
   unfollowers: Follower[],
 ): string {
-  let markdown = `# You have ${totalCount} followers now. [Go to followers page](https://github.com/${myGitHubLoginId}?tab=followers)`
+  let markdown = `## You have ${totalCount} followers now. \n###[Go to followers page](https://github.com/${myGitHubLoginId}?tab=followers)`
 
   const userMarkdown = (follower: Follower) =>
     `- [${follower.name || follower.login}](${follower.url})`
@@ -36,7 +36,7 @@ export function toPlainText(
   followers: Follower[],
   unfollowers: Follower[],
 ): string {
-  let text = `You have ${totalCount} followers now. Go to followers page: https://github.com/${myGitHubLoginId}?tab=followers`
+  let text = `You have ${totalCount} followers now. \nGo to followers page: https://github.com/${myGitHubLoginId}?tab=followers`
   const userText = (follower: Follower) =>
     `- ${follower.name || follower.login} (${follower.url})`
 
@@ -64,7 +64,7 @@ export function toHtml(
   followers: Follower[],
   unfollowers: Follower[],
 ): string {
-  let html = `<h1>You have ${totalCount} followers now. <a href="https://github.com/${myGitHubLoginId}?tab=followers">Go to followers page</a></h1>`
+  let html = `<h1>You have ${totalCount} followers now.</h1><h2><a href="https://github.com/${myGitHubLoginId}?tab=followers">Go to followers page</a></h2>`
 
   const userHtml = (follower: Follower) =>
     `<li>

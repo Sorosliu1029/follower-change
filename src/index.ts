@@ -3,7 +3,7 @@ import * as core from '@actions/core'
 import * as artifact from '@actions/artifact'
 import AdmZip from 'adm-zip'
 import fs from 'fs'
-import * as outputUtils from './output-utils'
+import * as output from './output'
 
 export type Follower = {
   databaseId: number
@@ -215,7 +215,7 @@ async function run() {
   core.setOutput('shouldNotify', shouldNotify)
   core.setOutput(
     'markdown',
-    outputUtils.toMarkdown(
+    output.toMarkdown(
       github.context.repo.owner,
       snapshotAt,
       totalCount,
@@ -225,7 +225,7 @@ async function run() {
   )
   core.setOutput(
     'plainText',
-    outputUtils.toPlainText(
+    output.toPlainText(
       github.context.repo.owner,
       snapshotAt,
       totalCount,
@@ -235,7 +235,7 @@ async function run() {
   )
   core.setOutput(
     'html',
-    outputUtils.toHtml(
+    output.toHtml(
       github.context.repo.owner,
       snapshotAt,
       totalCount,
