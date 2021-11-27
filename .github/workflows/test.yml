@@ -16,6 +16,7 @@ jobs:
         uses: ./
         with:
           myToken: ${{ secrets.MY_TOKEN }}
+          notifyUnFollowEvent: "true"
       - name: Get the output
         run: >
           printf "

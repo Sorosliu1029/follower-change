@@ -1,6 +1,7 @@
 node_modules/
 
 followers.json
+template.html
 
 dist/ts-compiled/
 

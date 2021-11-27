@@ -10,10 +10,13 @@ export type Follower = {
   login: string
   avatarUrl: string
   url: string
-  name: string
+  name?: string
+  bio?: string
+  company?: string
+  location?: string
 }
 
-type Response = {
+type FollowerResponse = {
   viewer: {
     followers: {
       totalCount: number
@@ -27,7 +30,7 @@ type Response = {
   }
 }
 
-type JsonStructure = { snapshotAt: Date; followers: Follower[] }
+type JsonFile = { snapshotAt: Date; followers: Follower[] }
 
 async function getFollowersFromGitHub(
   octokit: ReturnType<typeof github.getOctokit>,
@@ -39,10 +42,13 @@ async function getFollowersFromGitHub(
         followers(first: 100, after: $after) {
           nodes {
             databaseId
-            name
-            url
-            avatarUrl
             login
+            avatarUrl
+            url
+            name
+            bio
+            company
+            location
           }
           pageInfo {
             endCursor
@@ -56,17 +62,17 @@ async function getFollowersFromGitHub(
   `
 
   const followers: Follower[] = []
-  let result: Response | undefined = undefined
+  let result: FollowerResponse | undefined = undefined
 
   do {
     result = (await octokit.graphql(query, {
       after: result ? result.viewer.followers.pageInfo.endCursor : undefined,
-    })) as Response
+    })) as FollowerResponse
 
     followers.push(...result.viewer.followers.nodes)
   } while (result.viewer.followers.pageInfo.hasNextPage)
 
-  const j: JsonStructure = { snapshotAt: new Date(), followers }
+  const j: JsonFile = { snapshotAt: new Date(), followers }
   await fs.promises.writeFile(writeToFile, JSON.stringify(j, null, 2), 'utf8')
 
   return {
@@ -124,10 +130,10 @@ async function getSnapshotFollowers(
     const adm = new AdmZip(Buffer.from(downloadResp.data as ArrayBuffer))
     const entry = adm.getEntry(followerFile)
     if (!entry) {
-      return { followers: [], isFirstRun: false }
+      throw new Error(`Failed to find ${followerFile} in artifact`)
     }
 
-    const j: JsonStructure = JSON.parse(entry.getData().toString('utf8'))
+    const j: JsonFile = JSON.parse(entry.getData().toString('utf8'))
     if (!('snapshotAt' in j && 'followers' in j)) {
       throw new Error('Invalid snapshot file')
     }
@@ -138,9 +144,8 @@ async function getSnapshotFollowers(
     }
   } catch (error) {
     core.error(error as Error)
+    return { followers: [], isFirstRun: false }
   }
-
-  return { followers: [], isFirstRun: false }
 }
 
 async function uploadFollowerFile(
@@ -179,6 +184,9 @@ function getFollowersChange(
 async function run() {
   const myToken = core.getInput('myToken', { required: true })
   core.setSecret(myToken)
+  const notifyUnFollowEventStr = core.getInput('includeUnFollower')
+  const notifyUnFollowEvent = notifyUnFollowEventStr === 'true'
+  core.info(`Should notify unfollow event: ${notifyUnFollowEvent}`)
 
   const followerArtifactName = 'my-followers'
   const followerFile = 'followers.json'
@@ -197,6 +205,16 @@ async function run() {
 
   await uploadFollowerFile(artifactClient, followerArtifactName, followerFile)
 
+  if (isFirstRun) {
+    core.info('This is the first run')
+    return
+  }
+
+  if (!snapshotAt) {
+    core.setFailed('Failed to get snapshot time')
+    return
+  }
+
   const { followers, unfollowers } = getFollowersChange(
     previousFollowers,
     currentFollowers,
@@ -208,7 +226,9 @@ async function run() {
   const changed = followers.length > 0 || unfollowers.length > 0
   core.info(`Changed: ${changed}`)
 
-  const shouldNotify = changed && !isFirstRun
+  const shouldNotify =
+    !isFirstRun &&
+    (followers.length > 0 || (notifyUnFollowEvent && unfollowers.length > 0))
   core.info(`Should notify: ${shouldNotify}`)
 
   core.setOutput('changed', changed)
@@ -216,31 +236,31 @@ async function run() {
   core.setOutput(
     'markdown',
     output.toMarkdown(
-      github.context.repo.owner,
+      github.context,
       snapshotAt,
       totalCount,
       followers,
-      unfollowers,
+      notifyUnFollowEvent ? unfollowers : [],
     ),
   )
   core.setOutput(
     'plainText',
     output.toPlainText(
-      github.context.repo.owner,
+      github.context,
       snapshotAt,
       totalCount,
       followers,
-      unfollowers,
+      notifyUnFollowEvent ? unfollowers : [],
     ),
   )
   core.setOutput(
     'html',
     output.toHtml(
-      github.context.repo.owner,
+      github.context,
       snapshotAt,
       totalCount,
       followers,
-      unfollowers,
+      notifyUnFollowEvent ? unfollowers : [],
     ),
   )
 }

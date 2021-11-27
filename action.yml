@@ -7,6 +7,10 @@ inputs:
   myToken:
     description: "github personal access token"
     required: true
+  notifyUnFollowEvent:
+    description: "should notify unfollow event"
+    required: false
+    default: 'false'
 outputs:
   changed:
     description: "whether follower changed or not"
