@@ -140,9 +140,7 @@ async function uploadFollowerFile(
   artifactName: string,
   file: string,
 ): Promise<void> {
-  const uploadResult = await client.uploadArtifact(artifactName, [file], '.', {
-    retentionDays: 30,
-  })
+  const uploadResult = await client.uploadArtifact(artifactName, [file], '.')
   core.info(
     `Uploaded ${uploadResult.artifactItems.join(', ')} to ${
       uploadResult.artifactName

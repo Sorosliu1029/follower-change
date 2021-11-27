@@ -17403,9 +17403,7 @@ function getPreviousFollowers(octokit, artifactName, followerFile) {
 }
 function uploadFollowerFile(client, artifactName, file) {
     return __awaiter(this, void 0, void 0, function* () {
-        const uploadResult = yield client.uploadArtifact(artifactName, [file], '.', {
-            retentionDays: 30,
-        });
+        const uploadResult = yield client.uploadArtifact(artifactName, [file], '.');
         core.info(`Uploaded ${uploadResult.artifactItems.join(', ')} to ${uploadResult.artifactName}`);
     });
 }
