@@ -1,5 +1,6 @@
 name: "test"
 on:
+  workflow_dispatch:
   pull_request:
   push:
     branches:
@@ -19,16 +20,12 @@ jobs:
           notifyUnFollowEvent: "true"
       - name: Get the output
         run: >
-          printf "
-          is changed: ${{ steps.followerChange.outputs.changed }}\n
-          should notify: ${{ steps.followerChange.outputs.shouldNotify }}\n
-
-          markdown:\n
-          ${{ steps.followerChange.outputs.markdown }}
-
-          plainText:\n
-          ${{ steps.followerChange.outputs.plainText }}
-
-          html:\n
-          ${{ steps.followerChange.outputs.html }}
-          "
+          echo "is changed: ${{ steps.followerChange.outputs.changed }}" &
+          echo "should notify: ${{ steps.followerChange.outputs.shouldNotify }}" &
+          echo "${{ steps.followerChange.outputs.markdown }}" > followerChange.md &
+          echo "${{ steps.followerChange.outputs.html }}" > followerChange.html &
+          echo "${{ steps.followerChange.outputs.plainText }}$" > followerChange.txt
+      - uses: actions/upload-artifact@v2
+        with:
+          name: follower-change-file
+          path: ./followerChange.*

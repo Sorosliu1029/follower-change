@@ -1,5 +1,5 @@
-import { Context } from '@actions/github/lib/context'
-import type { Follower } from '.'
+import { Context } from "@actions/github/lib/context"
+import type { Follower } from "."
 
 function timeFromNow(date: Date): string {
   const now = new Date()
@@ -7,22 +7,22 @@ function timeFromNow(date: Date): string {
     (now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24),
   )
   if (dayDiff > 0) {
-    return `${dayDiff} day${dayDiff > 1 ? 's' : ''}`
+    return `${dayDiff} day${dayDiff > 1 ? "s" : ""}`
   }
 
   const hourDiff = Math.floor(
     (now.getTime() - date.getTime()) / (1000 * 60 * 60),
   )
   if (hourDiff > 0) {
-    return `${hourDiff} hour${hourDiff > 1 ? 's' : ''}`
+    return `${hourDiff} hour${hourDiff > 1 ? "s" : ""}`
   }
 
   const minuteDiff = Math.floor((now.getTime() - date.getTime()) / (1000 * 60))
   if (minuteDiff > 0) {
-    return `${minuteDiff} minute${minuteDiff > 1 ? 's' : ''}`
+    return `${minuteDiff} minute${minuteDiff > 1 ? "s" : ""}`
   }
 
-  return 'minute'
+  return "minute"
 }
 
 export function toMarkdown(
@@ -32,15 +32,15 @@ export function toMarkdown(
   followers: Follower[],
   unfollowers: Follower[],
 ): string {
-  let markdown = `## You've got ${followers.length} new follower${
-    followers.length > 1 ? 's' : ''
+  let markdown = `## You"ve got ${followers.length} new follower${
+    followers.length > 1 ? "s" : ""
   } in last ${timeFromNow(snapshotAt)} 🎉
   ${
     unfollowers.length
       ? `### But ${unfollowers.length} user${
-          unfollowers.length > 1 ? 's' : ''
+          unfollowers.length > 1 ? "s" : ""
         } unfollowed you 😢`
-      : ''
+      : ""
   }
   ### Now you have ${totalCount} followers in total 🥳`
 
@@ -48,13 +48,13 @@ export function toMarkdown(
     `- [${follower.name || follower.login}](${follower.url})`
 
   if (followers.length) {
-    markdown += `\n## New followers\n${followers.map(userMarkdown).join('\n')}`
+    markdown += `\n## New followers\n${followers.map(userMarkdown).join("\n")}`
   } else if (unfollowers.length) {
-    markdown += '\n## No new followers'
+    markdown += "\n## No new followers"
   }
 
   if (unfollowers.length) {
-    markdown += `\n## Unfollowers\n${unfollowers.map(userMarkdown).join('\n')}`
+    markdown += `\n## Unfollowers\n${unfollowers.map(userMarkdown).join("\n")}`
   }
 
   return markdown
@@ -67,15 +67,15 @@ export function toPlainText(
   followers: Follower[],
   unfollowers: Follower[],
 ): string {
-  let text = `You've got ${followers.length} new follower${
-    followers.length > 1 ? 's' : ''
+  let text = `You"ve got ${followers.length} new follower${
+    followers.length > 1 ? "s" : ""
   } in last ${timeFromNow(snapshotAt)} 🎉\n
   ${
     unfollowers.length
       ? `But ${unfollowers.length} user${
-          unfollowers.length > 1 ? 's' : ''
+          unfollowers.length > 1 ? "s" : ""
         } unfollowed you 😢\n`
-      : ''
+      : ""
   }
   Now you have ${totalCount} followers in total 🥳\n`
 
@@ -83,13 +83,13 @@ export function toPlainText(
     `- ${follower.name || follower.login} (${follower.url})`
 
   if (followers.length) {
-    text += `\nNew followers:\n${followers.map(userText).join('\n')}`
+    text += `\nNew followers:\n${followers.map(userText).join("\n")}`
   } else if (unfollowers.length) {
-    text += '\nNo new followers'
+    text += "\nNo new followers"
   }
 
   if (unfollowers.length) {
-    text += `\nUnfollowers:\n${unfollowers.map(userText).join('\n')}`
+    text += `\nUnfollowers:\n${unfollowers.map(userText).join("\n")}`
   }
 
   return text
@@ -113,7 +113,7 @@ export function toHtml(
         <h2
           style="box-sizing: border-box; margin-top: 8px !important; margin-bottom: 0; font-size: 24px; font-weight: 400 !important; line-height: 1.25 !important;">
           You’ve got ${followers.length} new follower${
-    followers.length > 1 ? 's' : ''
+    followers.length > 1 ? "s" : ""
   } in last ${timeFromNow(snapshotAt)} 🎉
         </h2>
         ${
@@ -121,10 +121,10 @@ export function toHtml(
             ? `<h3
           style="box-sizing: border-box; margin-top: 8px !important; margin-bottom: 0; font-size: 18px; font-weight: 400 !important; line-height: 1.25 !important;">
           But ${unfollowers.length} user${
-                unfollowers.length > 1 ? 's' : ''
+                unfollowers.length > 1 ? "s" : ""
               } unfollowed you 😢
         </h3>`
-            : ''
+            : ""
         }
         <h3
           style="box-sizing: border-box; margin-top: 8px !important; margin-bottom: 0; font-size: 18px; font-weight: 400 !important; line-height: 1.25 !important;">
@@ -143,8 +143,8 @@ export function toHtml(
     <table width="100%"
       style="box-sizing: border-box; border-spacing: 0; border-collapse: collapse; ${
         index < allFollowers.length - 1
-          ? 'border-bottom: 1px solid #d0d7de !important;'
-          : ''
+          ? "border-bottom: 1px solid #d0d7de !important;"
+          : ""
       }  width: 100% !important;">
       <tr style="box-sizing: border-box;">
         <td style="box-sizing: border-box; vertical-align: top; padding-top: 8px;">
@@ -161,7 +161,7 @@ export function toHtml(
             ${
               follower.name
                 ? `<span style="font-size: 16px !important; color: #24292f">${follower.name}</span>`
-                : ''
+                : ""
             }
             <span style="padding-left: 4px !important; font-size: 14px; color: #57606a">${
               follower.login
@@ -173,7 +173,7 @@ export function toHtml(
               ? `<div style="font-size: 12px !important; color: #57606a">
             <div>${follower.bio}</div>
           </div>`
-              : ''
+              : ""
           }
 
           <p style="font-size: 12px !important; color: #57606a">
@@ -187,7 +187,7 @@ export function toHtml(
                 </path>
               </svg> ${follower.company}
             </span>`
-                : ''
+                : ""
             }
             ${
               follower.location
@@ -197,7 +197,7 @@ export function toHtml(
                 d="M11.536 3.464a5 5 0 010 7.072L8 14.07l-3.536-3.535a5 5 0 117.072-7.072v.001zm1.06 8.132a6.5 6.5 0 10-9.192 0l3.535 3.536a1.5 1.5 0 002.122 0l3.535-3.536zM8 9a2 2 0 100-4 2 2 0 000 4z">
               </path>
             </svg> ${follower.location}`
-                : ''
+                : ""
             }
           </p>
 
@@ -222,7 +222,7 @@ export function toHtml(
     <tr style="box-sizing: border-box;">
       <td
         style="box-sizing: border-box; border-radius: 6px !important; display: block !important; padding: 0; border: 1px solid #e1e4e8;">
-        ${followers.map(userHtml).join('')}</td></tr>`
+        ${followers.map(userHtml).join("")}</td></tr>`
   } else if (unfollowers.length) {
     followerSection += `<!-- new followers -->
     <tr>
@@ -246,7 +246,7 @@ export function toHtml(
     <tr style="box-sizing: border-box;">
       <td
         style="box-sizing: border-box; border-radius: 6px !important; display: block !important; padding: 0; border: 1px solid #e1e4e8;">
-        ${unfollowers.map(userHtml).join('')}</td></tr>`
+        ${unfollowers.map(userHtml).join("")}</td></tr>`
   }
 
   followerSection += `
@@ -266,14 +266,14 @@ export function toHtml(
 <!DOCTYPE html
   PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"
-  style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji'; -ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; box-sizing: border-box;"
+  style="font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji"; -ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; box-sizing: border-box;"
   xml:lang="en">
 
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
   <meta name="viewport" content="width=device-width" />
-  <title>You've got ${followers.length} new follower${
-    followers.length > 1 ? 's' : ''
+  <title>You"ve got ${followers.length} new follower${
+    followers.length > 1 ? "s" : ""
   }</title>
 </head>  
 

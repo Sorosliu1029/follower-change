@@ -205,20 +205,23 @@ async function run() {
 
   await uploadFollowerFile(artifactClient, followerArtifactName, followerFile)
 
-  if (isFirstRun) {
-    core.info('This is the first run')
-    return
-  }
+  // if (isFirstRun) {
+  //   core.info('This is the first run')
+  //   return
+  // }
 
-  if (!snapshotAt) {
-    core.setFailed('Failed to get snapshot time')
-    return
-  }
+  // if (!snapshotAt) {
+  //   core.setFailed('Failed to get snapshot time')
+  //   return
+  // }
 
-  const { followers, unfollowers } = getFollowersChange(
-    previousFollowers,
-    currentFollowers,
-  )
+  // const { followers, unfollowers } = getFollowersChange(
+  //   previousFollowers,
+  //   currentFollowers,
+  // )
+
+  const followers = currentFollowers.slice(0, 20)
+  const unfollowers = currentFollowers.slice(0, 3)
   core.info(
     `Follower change: \u001b[38;5;10m${followers.length} new followers, \u001b[38;5;11m${unfollowers.length} unfollowers`,
   )
@@ -237,7 +240,7 @@ async function run() {
     'markdown',
     output.toMarkdown(
       github.context,
-      snapshotAt,
+      snapshotAt ?? new Date(),
       totalCount,
       followers,
       notifyUnFollowEvent ? unfollowers : [],
@@ -247,7 +250,7 @@ async function run() {
     'plainText',
     output.toPlainText(
       github.context,
-      snapshotAt,
+      snapshotAt ?? new Date(),
       totalCount,
       followers,
       notifyUnFollowEvent ? unfollowers : [],
@@ -257,7 +260,7 @@ async function run() {
     'html',
     output.toHtml(
       github.context,
-      snapshotAt,
+      snapshotAt ?? new Date(),
       totalCount,
       followers,
       notifyUnFollowEvent ? unfollowers : [],
