@@ -1,8 +1,8 @@
-name: "Check if follower change"
+name: "GitHub follower change event"
 description: "run as cron job, get follow and unfollow event"
 branding:
-  icon: 'user-check'  
-  color: 'green'
+  icon: "user-check"
+  color: "green"
 inputs:
   myToken:
     description: "github personal access token"
@@ -14,6 +14,10 @@ outputs:
     description: "skip notification when no change or first run"
   markdown:
     description: "markdown for follower change info"
+  plainText:
+    description: "plain text for follower change info"
+  html:
+    description: "html for follower change info"
 runs:
   using: "node12"
   main: "dist/index.js"
