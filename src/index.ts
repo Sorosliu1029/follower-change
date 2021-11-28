@@ -256,16 +256,16 @@ async function run() {
       notifyUnFollowEvent ? unfollowers : [],
     ),
   )
-  core.setOutput(
-    'html',
-    output.toHtml(
-      github.context,
-      snapshotAt ?? new Date(),
-      totalCount,
-      followers,
-      notifyUnFollowEvent ? unfollowers : [],
-    ),
-  )
+  // core.setOutput(
+  //   'html',
+  //   output.toHtml(
+  //     github.context,
+  //     snapshotAt ?? new Date(),
+  //     totalCount,
+  //     followers,
+  //     notifyUnFollowEvent ? unfollowers : [],
+  //   ),
+  // )
 }
 
 run()

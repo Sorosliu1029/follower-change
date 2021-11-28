@@ -1,5 +1,6 @@
 name: "GitHub follower change event"
-description: "run as cron job, get follow and unfollow event"
+description: "To get follow and unfollow event, could run as a cron job"
+author: "Soros Liu"
 branding:
   icon: "user-check"
   color: "green"
@@ -8,9 +9,9 @@ inputs:
     description: "github personal access token"
     required: true
   notifyUnFollowEvent:
-    description: "should notify unfollow event"
+    description: "should notify unfollow event or not"
     required: false
-    default: 'false'
+    default: "false"
 outputs:
   changed:
     description: "whether follower changed or not"
