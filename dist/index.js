@@ -17448,12 +17448,7 @@ function run() {
             core.setFailed('Failed to get snapshot time');
             return;
         }
-        // const { followers, unfollowers } = getFollowersChange(
-        //   previousFollowers,
-        //   currentFollowers,
-        // )
-        const followers = currentFollowers.slice(0, 20);
-        const unfollowers = currentFollowers.slice(20, 23);
+        const { followers, unfollowers } = getFollowersChange(previousFollowers, currentFollowers);
         core.info(`Follower change: \u001b[38;5;10m${followers.length} new followers, \u001b[38;5;11m${unfollowers.length} unfollowers`);
         const changed = followers.length > 0 || unfollowers.length > 0;
         core.info(`Changed: ${changed}`);

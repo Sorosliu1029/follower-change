@@ -22,7 +22,7 @@ jobs:
         run: >
           printf "
           is changed: ${{ steps.followerChange.outputs.changed }}\n
-          should notify: ${{ steps.followerChange.outputs.shouldNotify }}
+          should notify: ${{ steps.followerChange.outputs.shouldNotify }}\n
           html file at: ${{ steps.followerChange.outputs.htmlFilePath }}
           "
       - uses: actions/upload-artifact@v2
