@@ -20,12 +20,12 @@ jobs:
           notifyUnFollowEvent: "true"
       - name: Get the output
         run: >
-          echo "is changed: ${{ steps.followerChange.outputs.changed }}" &
-          echo "should notify: ${{ steps.followerChange.outputs.shouldNotify }}" &
-          echo "${{ steps.followerChange.outputs.markdown }}" > followerChange.md &
-          echo "${{ steps.followerChange.outputs.html }}" > followerChange.html &
-          echo "${{ steps.followerChange.outputs.plainText }}$" > followerChange.txt
+          printf "
+          is changed: ${{ steps.followerChange.outputs.changed }}\n
+          should notify: ${{ steps.followerChange.outputs.shouldNotify }}\n
+          html file at: ${{ steps.followerChange.outputs.htmlFilePath }}
+          "
       - uses: actions/upload-artifact@v2
         with:
-          name: follower-change-file
-          path: ./followerChange.*
+          name: follower-change-html
+          path: ${{ steps.followerChange.outputs.htmlFilePath }}

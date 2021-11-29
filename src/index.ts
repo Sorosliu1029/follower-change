@@ -6,7 +6,6 @@ import fs from 'fs'
 import * as output from './output'
 
 export type Follower = {
-  databaseId: number
   login: string
   avatarUrl: string
   url: string
@@ -41,7 +40,6 @@ async function getFollowersFromGitHub(
       viewer {
         followers(first: 100, after: $after) {
           nodes {
-            databaseId
             login
             avatarUrl
             url
@@ -166,17 +164,17 @@ function getFollowersChange(
   current: Follower[],
 ): { followers: Follower[]; unfollowers: Follower[] } {
   const previousMap = new Map(
-    previous.map((follower) => [follower.databaseId, follower]),
+    previous.map((follower) => [follower.login, follower]),
   )
   const currentMap = new Map(
-    current.map((follower) => [follower.databaseId, follower]),
+    current.map((follower) => [follower.login, follower]),
   )
 
   const followers = current.filter(
-    (follower) => !previousMap.has(follower.databaseId),
+    (follower) => !previousMap.has(follower.login),
   )
   const unfollowers = previous.filter(
-    (follower) => !currentMap.has(follower.databaseId),
+    (follower) => !currentMap.has(follower.login),
   )
   return { followers, unfollowers }
 }
@@ -205,23 +203,21 @@ async function run() {
 
   await uploadFollowerFile(artifactClient, followerArtifactName, followerFile)
 
-  // if (isFirstRun) {
-  //   core.info('This is the first run')
-  //   return
-  // }
+  if (isFirstRun) {
+    core.info('This is the first run')
+    return
+  }
 
-  // if (!snapshotAt) {
-  //   core.setFailed('Failed to get snapshot time')
-  //   return
-  // }
+  if (!snapshotAt) {
+    core.setFailed('Failed to get snapshot time')
+    return
+  }
 
-  // const { followers, unfollowers } = getFollowersChange(
-  //   previousFollowers,
-  //   currentFollowers,
-  // )
+  const { followers, unfollowers } = getFollowersChange(
+    previousFollowers,
+    currentFollowers,
+  )
 
-  const followers = currentFollowers.slice(0, 20)
-  const unfollowers = currentFollowers.slice(0, 3)
   core.info(
     `Follower change: \u001b[38;5;10m${followers.length} new followers, \u001b[38;5;11m${unfollowers.length} unfollowers`,
   )
@@ -256,16 +252,18 @@ async function run() {
       notifyUnFollowEvent ? unfollowers : [],
     ),
   )
-  core.setOutput(
-    'html',
-    output.toHtml(
-      github.context,
-      snapshotAt ?? new Date(),
-      totalCount,
-      followers,
-      notifyUnFollowEvent ? unfollowers : [],
-    ),
+
+  const html = output.toHtml(
+    github.context,
+    snapshotAt ?? new Date(),
+    totalCount,
+    followers,
+    notifyUnFollowEvent ? unfollowers : [],
   )
+  const htmlFilePath = process.cwd() + '/email.html'
+  await fs.promises.writeFile(htmlFilePath, html, 'utf8')
+  core.setOutput('htmlFilePath', htmlFilePath)
+  core.info(`Wrote HTML to ${htmlFilePath}`)
 }
 
 run()
