@@ -182,7 +182,7 @@ function getFollowersChange(
 async function run() {
   const myToken = core.getInput('myToken', { required: true })
   core.setSecret(myToken)
-  const notifyUnFollowEventStr = core.getInput('includeUnFollower')
+  const notifyUnFollowEventStr = core.getInput('notifyUnFollowEvent')
   const notifyUnFollowEvent = notifyUnFollowEventStr === 'true'
   core.info(`Should notify unfollow event: ${notifyUnFollowEvent}`)
 
@@ -213,10 +213,13 @@ async function run() {
     return
   }
 
-  const { followers, unfollowers } = getFollowersChange(
-    previousFollowers,
-    currentFollowers,
-  )
+  // const { followers, unfollowers } = getFollowersChange(
+  //   previousFollowers,
+  //   currentFollowers,
+  // )
+
+  const followers = currentFollowers.slice(0, 3)
+  const unfollowers = currentFollowers.slice(3, 6)
 
   core.info(
     `Follower change: \u001b[38;5;10m${followers.length} new followers, \u001b[38;5;11m${unfollowers.length} unfollowers`,

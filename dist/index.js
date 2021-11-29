@@ -17430,7 +17430,7 @@ function run() {
     return __awaiter(this, void 0, void 0, function* () {
         const myToken = core.getInput('myToken', { required: true });
         core.setSecret(myToken);
-        const notifyUnFollowEventStr = core.getInput('includeUnFollower');
+        const notifyUnFollowEventStr = core.getInput('notifyUnFollowEvent');
         const notifyUnFollowEvent = notifyUnFollowEventStr === 'true';
         core.info(`Should notify unfollow event: ${notifyUnFollowEvent}`);
         const followerArtifactName = 'my-followers';
@@ -17448,7 +17448,12 @@ function run() {
             core.setFailed('Failed to get snapshot time');
             return;
         }
-        const { followers, unfollowers } = getFollowersChange(previousFollowers, currentFollowers);
+        // const { followers, unfollowers } = getFollowersChange(
+        //   previousFollowers,
+        //   currentFollowers,
+        // )
+        const followers = currentFollowers.slice(0, 3);
+        const unfollowers = currentFollowers.slice(3, 6);
         core.info(`Follower change: \u001b[38;5;10m${followers.length} new followers, \u001b[38;5;11m${unfollowers.length} unfollowers`);
         const changed = followers.length > 0 || unfollowers.length > 0;
         core.info(`Changed: ${changed}`);
