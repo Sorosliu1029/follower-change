@@ -213,13 +213,10 @@ async function run() {
     return
   }
 
-  // const { followers, unfollowers } = getFollowersChange(
-  //   previousFollowers,
-  //   currentFollowers,
-  // )
-
-  const followers = currentFollowers.slice(0, 3)
-  const unfollowers = currentFollowers.slice(3, 6)
+  const { followers, unfollowers } = getFollowersChange(
+    previousFollowers,
+    currentFollowers,
+  )
 
   core.info(
     `Follower change: \u001b[38;5;10m${followers.length} new followers, \u001b[38;5;11m${unfollowers.length} unfollowers`,
