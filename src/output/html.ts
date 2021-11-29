@@ -164,7 +164,7 @@ export function toHtml(
               </td>
             </tr>
             <tr>
-              <td class="sm-px-24" style="border-radius: 4px; background-color: #ffffff; padding: 48px; text-align: left; font-size: 16px; line-height: 24px;">
+              <td class="sm-px-24" style="border-radius: 4px; background-color: #ffffff; padding: 48px; text-align: left; font-size: 16px; line-height: 1.5;">
                 <table style="width: 100%;" cellpadding="0" cellspacing="0" role="presentation">
                   <tr>
                     <td>
