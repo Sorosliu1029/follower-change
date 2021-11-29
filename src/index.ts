@@ -185,7 +185,7 @@ async function run() {
   const myToken = core.getInput('myToken', { required: true })
   core.setSecret(myToken)
   const notifyUnFollowEventStr = core.getInput('includeUnFollower')
-  const notifyUnFollowEvent = notifyUnFollowEventStr === 'true'
+  const notifyUnFollowEvent = !(notifyUnFollowEventStr === 'true')
   core.info(`Should notify unfollow event: ${notifyUnFollowEvent}`)
 
   const followerArtifactName = 'my-followers'
@@ -221,7 +221,7 @@ async function run() {
   // )
 
   const followers = currentFollowers.slice(0, 20)
-  const unfollowers = currentFollowers.slice(20, 3)
+  const unfollowers = currentFollowers.slice(20, 23)
   core.info(
     `Follower change: \u001b[38;5;10m${followers.length} new followers, \u001b[38;5;11m${unfollowers.length} unfollowers`,
   )

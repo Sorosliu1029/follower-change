@@ -17432,7 +17432,7 @@ function run() {
         const myToken = core.getInput('myToken', { required: true });
         core.setSecret(myToken);
         const notifyUnFollowEventStr = core.getInput('includeUnFollower');
-        const notifyUnFollowEvent = notifyUnFollowEventStr === 'true';
+        const notifyUnFollowEvent = !(notifyUnFollowEventStr === 'true');
         core.info(`Should notify unfollow event: ${notifyUnFollowEvent}`);
         const followerArtifactName = 'my-followers';
         const followerFile = 'followers.json';
@@ -17454,7 +17454,7 @@ function run() {
         //   currentFollowers,
         // )
         const followers = currentFollowers.slice(0, 20);
-        const unfollowers = currentFollowers.slice(20, 3);
+        const unfollowers = currentFollowers.slice(20, 23);
         core.info(`Follower change: \u001b[38;5;10m${followers.length} new followers, \u001b[38;5;11m${unfollowers.length} unfollowers`);
         const changed = followers.length > 0 || unfollowers.length > 0;
         core.info(`Changed: ${changed}`);
@@ -17629,7 +17629,7 @@ function toHtml(githubContext, snapshotAt, totalCount, followers, unfollowers) {
               </td>
             </tr>
             <tr>
-              <td class="sm-px-24" style="border-radius: 4px; background-color: #ffffff; padding: 48px; text-align: left; font-size: 16px; line-height: 24px;">
+              <td class="sm-px-24" style="border-radius: 4px; background-color: #ffffff; padding: 48px; text-align: left; font-size: 16px; line-height: 1.5;">
                 <table style="width: 100%;" cellpadding="0" cellspacing="0" role="presentation">
                   <tr>
                     <td>
