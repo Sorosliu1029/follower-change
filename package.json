@@ -28,7 +28,6 @@
     "@actions/artifact": "^0.5.2",
     "@actions/core": "^1.6.0",
     "@actions/github": "^5.0.0",
-    "@maizzle/framework": "^3.7.2",
     "adm-zip": "^0.5.9"
   },
   "devDependencies": {

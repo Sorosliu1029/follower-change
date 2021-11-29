@@ -21,9 +21,8 @@ outputs:
     description: "markdown for follower change info"
   plainText:
     description: "plain text for follower change info"
-  html:
-    description: "html for follower change info"
+  htmlFilePath:
+    description: "path of html file for follower change info"
 runs:
   using: "node12"
   main: "dist/index.js"
-  pre: "ls"

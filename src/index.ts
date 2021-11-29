@@ -221,7 +221,7 @@ async function run() {
   // )
 
   const followers = currentFollowers.slice(0, 20)
-  const unfollowers = currentFollowers.slice(0, 3)
+  const unfollowers = currentFollowers.slice(20, 3)
   core.info(
     `Follower change: \u001b[38;5;10m${followers.length} new followers, \u001b[38;5;11m${unfollowers.length} unfollowers`,
   )
@@ -256,16 +256,17 @@ async function run() {
       notifyUnFollowEvent ? unfollowers : [],
     ),
   )
-  // core.setOutput(
-  //   'html',
-  //   output.toHtml(
-  //     github.context,
-  //     snapshotAt ?? new Date(),
-  //     totalCount,
-  //     followers,
-  //     notifyUnFollowEvent ? unfollowers : [],
-  //   ),
-  // )
+
+  const html = output.toHtml(
+    github.context,
+    snapshotAt ?? new Date(),
+    totalCount,
+    followers,
+    notifyUnFollowEvent ? unfollowers : [],
+  )
+  const htmlFilePath = 'email.html'
+  await fs.promises.writeFile(htmlFilePath, html, 'utf8')
+  core.setOutput('htmlFilePath', htmlFilePath)
 }
 
 run()
