@@ -17328,7 +17328,6 @@ function getFollowersFromGitHub(octokit, writeToFile) {
       viewer {
         followers(first: 100, after: $after) {
           nodes {
-            databaseId
             login
             avatarUrl
             url
@@ -17421,10 +17420,10 @@ function uploadFollowerFile(client, artifactName, file) {
     });
 }
 function getFollowersChange(previous, current) {
-    const previousMap = new Map(previous.map((follower) => [follower.databaseId, follower]));
-    const currentMap = new Map(current.map((follower) => [follower.databaseId, follower]));
-    const followers = current.filter((follower) => !previousMap.has(follower.databaseId));
-    const unfollowers = previous.filter((follower) => !currentMap.has(follower.databaseId));
+    const previousMap = new Map(previous.map((follower) => [follower.login, follower]));
+    const currentMap = new Map(current.map((follower) => [follower.login, follower]));
+    const followers = current.filter((follower) => !previousMap.has(follower.login));
+    const unfollowers = previous.filter((follower) => !currentMap.has(follower.login));
     return { followers, unfollowers };
 }
 function run() {
@@ -17432,7 +17431,7 @@ function run() {
         const myToken = core.getInput('myToken', { required: true });
         core.setSecret(myToken);
         const notifyUnFollowEventStr = core.getInput('includeUnFollower');
-        const notifyUnFollowEvent = !(notifyUnFollowEventStr === 'true');
+        const notifyUnFollowEvent = notifyUnFollowEventStr === 'true';
         core.info(`Should notify unfollow event: ${notifyUnFollowEvent}`);
         const followerArtifactName = 'my-followers';
         const followerFile = 'followers.json';
@@ -17441,14 +17440,14 @@ function run() {
         const { snapshotAt, followers: previousFollowers, isFirstRun, } = yield getSnapshotFollowers(octokit, followerArtifactName, followerFile);
         const { followers: currentFollowers, totalCount } = yield getFollowersFromGitHub(octokit, followerFile);
         yield uploadFollowerFile(artifactClient, followerArtifactName, followerFile);
-        // if (isFirstRun) {
-        //   core.info('This is the first run')
-        //   return
-        // }
-        // if (!snapshotAt) {
-        //   core.setFailed('Failed to get snapshot time')
-        //   return
-        // }
+        if (isFirstRun) {
+            core.info('This is the first run');
+            return;
+        }
+        if (!snapshotAt) {
+            core.setFailed('Failed to get snapshot time');
+            return;
+        }
         // const { followers, unfollowers } = getFollowersChange(
         //   previousFollowers,
         //   currentFollowers,
@@ -17466,9 +17465,10 @@ function run() {
         core.setOutput('markdown', output.toMarkdown(github.context, snapshotAt !== null && snapshotAt !== void 0 ? snapshotAt : new Date(), totalCount, followers, notifyUnFollowEvent ? unfollowers : []));
         core.setOutput('plainText', output.toPlainText(github.context, snapshotAt !== null && snapshotAt !== void 0 ? snapshotAt : new Date(), totalCount, followers, notifyUnFollowEvent ? unfollowers : []));
         const html = output.toHtml(github.context, snapshotAt !== null && snapshotAt !== void 0 ? snapshotAt : new Date(), totalCount, followers, notifyUnFollowEvent ? unfollowers : []);
-        const htmlFilePath = 'email.html';
+        const htmlFilePath = process.cwd() + '/email.html';
         yield fs_1.default.promises.writeFile(htmlFilePath, html, 'utf8');
         core.setOutput('htmlFilePath', htmlFilePath);
+        core.info(`Wrote HTML to ${htmlFilePath}`);
     });
 }
 run()

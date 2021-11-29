@@ -23,8 +23,9 @@ jobs:
           printf "
           is changed: ${{ steps.followerChange.outputs.changed }}\n
           should notify: ${{ steps.followerChange.outputs.shouldNotify }}
+          html file at: ${{ steps.followerChange.outputs.htmlFilePath }}
           "
       - uses: actions/upload-artifact@v2
         with:
           name: follower-change-html
-          path: ./**/email.html
+          path: ${{ steps.followerChange.outputs.htmlFilePath }}
