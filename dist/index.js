@@ -17502,10 +17502,10 @@ function toUserSection(sectionTitle, users) {
                 ? `<div style="margin-top: 0; margin-bottom: 8px; font-size: 12px; color: #57606a;"><div>${user.bio}</div></div>`
                 : '';
             const companySection = user.company
-                ? `<span style="margin-right: 16px;">Work at: ${user.company}</span>`
+                ? `<span style="margin-right: 16px;">🏢&nbsp;${user.company}</span>`
                 : '';
             const locationSection = user.location
-                ? `<span>Live at: ${user.location}</span>`
+                ? `<span>📍&nbsp;${user.location}</span>`
                 : '';
             userSection += `
       <table style="width: 100%; border-width: 0px; border-bottom-width: 1px; border-style: solid; border-color: #d0d7de; padding-top: 16px; padding-bottom: 16px;" cellpadding="0" cellspacing="0" role="presentation">
@@ -17620,7 +17620,7 @@ function toHtml(githubContext, snapshotAt, totalCount, followers, unfollowers) {
                         ${totalStat}
                       </p>
                       <hr
-                        style="margin-top: 0; margin-bottom: 0; height: 1px; border-width: 0px; background-color: #24292f; color: #24292f;">
+                        style="margin-top: 0; margin-bottom: 0; height: 1px; border-width: 0px; background-color: #d0d7de; color: #d0d7de;">
                     </td>
                   </tr>
 
