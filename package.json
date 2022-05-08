@@ -1,10 +1,10 @@
 {
   "name": "follower-change",
-  "version": "1.0.0",
+  "version": "3.0.0",
   "description": "Get your GitHub followers change (follow or unfollow)",
   "main": "index.js",
   "scripts": {
-    "lint": "eslint .",
+    "lint": "eslint",
     "prepare": "ncc build src/index.ts -o dist --source-map --license licenses.txt",
     "test": "jest --passWithNoTests",
     "all": "npm run lint && npm run test && npm run prepare"

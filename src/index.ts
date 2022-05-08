@@ -5,7 +5,10 @@ import AdmZip from 'adm-zip'
 import fs from 'fs'
 import * as output from './output'
 
+const ACTION_VERSION = 3
+
 export type Follower = {
+  databaseId: number
   login: string
   avatarUrl: string
   url: string
@@ -29,7 +32,11 @@ type FollowerResponse = {
   }
 }
 
-type JsonFile = { snapshotAt: Date; followers: Follower[] }
+type JsonFile = {
+  actionVersion?: number
+  snapshotAt: Date
+  followers: Follower[]
+}
 
 async function getFollowersFromGitHub(
   octokit: ReturnType<typeof github.getOctokit>,
@@ -40,6 +47,7 @@ async function getFollowersFromGitHub(
       viewer {
         followers(first: 100, after: $after) {
           nodes {
+            databaseId
             login
             avatarUrl
             url
@@ -70,7 +78,11 @@ async function getFollowersFromGitHub(
     followers.push(...result.viewer.followers.nodes)
   } while (result.viewer.followers.pageInfo.hasNextPage)
 
-  const j: JsonFile = { snapshotAt: new Date(), followers }
+  const j: JsonFile = {
+    actionVersion: ACTION_VERSION,
+    snapshotAt: new Date(),
+    followers,
+  }
   await fs.promises.writeFile(writeToFile, JSON.stringify(j, null, 2), 'utf8')
 
   return {
@@ -83,7 +95,12 @@ async function getSnapshotFollowers(
   octokit: ReturnType<typeof github.getOctokit>,
   artifactName: string,
   followerFile: string,
-): Promise<{ snapshotAt?: Date; followers: Follower[]; isFirstRun: boolean }> {
+): Promise<{
+  actionVersion?: number
+  snapshotAt?: Date
+  followers: Follower[]
+  isFirstRun: boolean
+}> {
   const owner = github.context.repo.owner
   const repo = github.context.repo.repo
   try {
@@ -136,6 +153,7 @@ async function getSnapshotFollowers(
       throw new Error('Invalid snapshot file')
     }
     return {
+      actionVersion: j.actionVersion,
       snapshotAt: new Date(j.snapshotAt),
       followers: j.followers,
       isFirstRun: false,
@@ -162,19 +180,20 @@ async function uploadFollowerFile(
 function getFollowersChange(
   previous: Follower[],
   current: Follower[],
+  diffBy: 'login' | 'databaseId',
 ): { followers: Follower[]; unfollowers: Follower[] } {
   const previousMap = new Map(
-    previous.map((follower) => [follower.login, follower]),
+    previous.map((follower) => [follower[diffBy], follower]),
   )
   const currentMap = new Map(
-    current.map((follower) => [follower.login, follower]),
+    current.map((follower) => [follower[diffBy], follower]),
   )
 
   const followers = current.filter(
-    (follower) => !previousMap.has(follower.login),
+    (follower) => !previousMap.has(follower[diffBy]),
   )
   const unfollowers = previous.filter(
-    (follower) => !currentMap.has(follower.login),
+    (follower) => !currentMap.has(follower[diffBy]),
   )
   return { followers, unfollowers }
 }
@@ -196,6 +215,7 @@ async function run() {
     snapshotAt,
     followers: previousFollowers,
     isFirstRun,
+    actionVersion,
   } = await getSnapshotFollowers(octokit, followerArtifactName, followerFile)
 
   const { followers: currentFollowers, totalCount } =
@@ -216,6 +236,7 @@ async function run() {
   const { followers, unfollowers } = getFollowersChange(
     previousFollowers,
     currentFollowers,
+    actionVersion && actionVersion >= 3 ? 'databaseId' : 'login',
   )
 
   core.info(

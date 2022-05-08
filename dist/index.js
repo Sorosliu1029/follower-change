@@ -17321,6 +17321,7 @@ const artifact = __importStar(__nccwpck_require__(2605));
 const adm_zip_1 = __importDefault(__nccwpck_require__(6761));
 const fs_1 = __importDefault(__nccwpck_require__(7147));
 const output = __importStar(__nccwpck_require__(4489));
+const ACTION_VERSION = 3;
 function getFollowersFromGitHub(octokit, writeToFile) {
     return __awaiter(this, void 0, void 0, function* () {
         const query = `
@@ -17328,6 +17329,7 @@ function getFollowersFromGitHub(octokit, writeToFile) {
       viewer {
         followers(first: 100, after: $after) {
           nodes {
+            databaseId
             login
             avatarUrl
             url
@@ -17354,7 +17356,11 @@ function getFollowersFromGitHub(octokit, writeToFile) {
             }));
             followers.push(...result.viewer.followers.nodes);
         } while (result.viewer.followers.pageInfo.hasNextPage);
-        const j = { snapshotAt: new Date(), followers };
+        const j = {
+            actionVersion: ACTION_VERSION,
+            snapshotAt: new Date(),
+            followers,
+        };
         yield fs_1.default.promises.writeFile(writeToFile, JSON.stringify(j, null, 2), 'utf8');
         return {
             followers,
@@ -17402,6 +17408,7 @@ function getSnapshotFollowers(octokit, artifactName, followerFile) {
                 throw new Error('Invalid snapshot file');
             }
             return {
+                actionVersion: j.actionVersion,
                 snapshotAt: new Date(j.snapshotAt),
                 followers: j.followers,
                 isFirstRun: false,
@@ -17419,11 +17426,11 @@ function uploadFollowerFile(client, artifactName, file) {
         core.info(`Uploaded ${uploadResult.artifactItems.join(', ')} to ${uploadResult.artifactName}`);
     });
 }
-function getFollowersChange(previous, current) {
-    const previousMap = new Map(previous.map((follower) => [follower.login, follower]));
-    const currentMap = new Map(current.map((follower) => [follower.login, follower]));
-    const followers = current.filter((follower) => !previousMap.has(follower.login));
-    const unfollowers = previous.filter((follower) => !currentMap.has(follower.login));
+function getFollowersChange(previous, current, diffBy) {
+    const previousMap = new Map(previous.map((follower) => [follower[diffBy], follower]));
+    const currentMap = new Map(current.map((follower) => [follower[diffBy], follower]));
+    const followers = current.filter((follower) => !previousMap.has(follower[diffBy]));
+    const unfollowers = previous.filter((follower) => !currentMap.has(follower[diffBy]));
     return { followers, unfollowers };
 }
 function run() {
@@ -17437,7 +17444,7 @@ function run() {
         const followerFile = 'followers.json';
         const octokit = github.getOctokit(myToken);
         const artifactClient = artifact.create();
-        const { snapshotAt, followers: previousFollowers, isFirstRun, } = yield getSnapshotFollowers(octokit, followerArtifactName, followerFile);
+        const { snapshotAt, followers: previousFollowers, isFirstRun, actionVersion, } = yield getSnapshotFollowers(octokit, followerArtifactName, followerFile);
         const { followers: currentFollowers, totalCount } = yield getFollowersFromGitHub(octokit, followerFile);
         yield uploadFollowerFile(artifactClient, followerArtifactName, followerFile);
         if (isFirstRun) {
@@ -17448,7 +17455,7 @@ function run() {
             core.setFailed('Failed to get snapshot time');
             return;
         }
-        const { followers, unfollowers } = getFollowersChange(previousFollowers, currentFollowers);
+        const { followers, unfollowers } = getFollowersChange(previousFollowers, currentFollowers, actionVersion && actionVersion >= 3 ? 'databaseId' : 'login');
         core.info(`Follower change: \u001b[38;5;10m${followers.length} new followers, \u001b[38;5;11m${unfollowers.length} unfollowers`);
         const changed = followers.length > 0 || unfollowers.length > 0;
         core.info(`Changed: ${changed}`);
