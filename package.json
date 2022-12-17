@@ -1,10 +1,10 @@
 {
   "name": "follower-change",
-  "version": "1.0.0",
+  "version": "2.2.0",
   "description": "Get your GitHub followers change (follow or unfollow)",
   "main": "index.js",
   "scripts": {
-    "lint": "eslint .",
+    "lint": "eslint **/*.ts",
     "prepare": "ncc build src/index.ts -o dist --source-map --license licenses.txt",
     "test": "jest --passWithNoTests",
     "all": "npm run lint && npm run test && npm run prepare"
@@ -26,16 +26,17 @@
   "homepage": "https://github.com/Sorosliu1029/follower-change#readme",
   "dependencies": {
     "@actions/artifact": "^0.5.2",
-    "@actions/core": "^1.6.0",
-    "@actions/github": "^5.0.0",
+    "@actions/core": "^1.10.0",
+    "@actions/github": "^5.1.1",
     "adm-zip": "^0.5.9"
   },
   "devDependencies": {
-    "@tsconfig/node12": "^1.0.9",
+    "@tsconfig/node16": "^1.0.3",
     "@types/adm-zip": "^0.4.34",
+    "@typescript-eslint/parser": "^5.46.1",
     "@vercel/ncc": "^0.32.0",
-    "eslint": "^8.3.0",
+    "eslint": "^8.30.0",
     "jest": "^27.3.1",
-    "typescript": "^4.5.2"
+    "typescript": "4.6"
   }
 }
