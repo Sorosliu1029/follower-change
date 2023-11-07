@@ -1,5 +1,6 @@
 # Follower Change
 
+
 ### What this action does ?
 
 Get GitHub follower change event, i.e. when a user follows or unfollows you.
