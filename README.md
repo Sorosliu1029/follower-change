@@ -1,7 +1,5 @@
 # Follower Change
 
-![visitors](https://visitor-badge.glitch.me/badge?page_id=Sorosliu1029.follower-change)
-
 ### What this action does ?
 
 Get GitHub follower change event, i.e. when a user follows or unfollows you.
