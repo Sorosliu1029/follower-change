@@ -7,7 +7,7 @@
     "lint": "eslint **/*.ts",
     "prepare": "ncc build src/index.ts -o dist --source-map --license licenses.txt",
     "test": "jest --passWithNoTests",
-    "all": "npm run lint && npm run test && npm run prepare"
+    "all": "pnpm run lint && pnpm run test && pnpm run prepare"
   },
   "repository": {
     "type": "git",
@@ -24,6 +24,7 @@
     "url": "https://github.com/Sorosliu1029/follower-change/issues"
   },
   "homepage": "https://github.com/Sorosliu1029/follower-change#readme",
+  "packageManager": "pnpm@10.2.0",
   "dependencies": {
     "@actions/artifact": "^2.2.1",
     "@actions/core": "^1.11.1",
