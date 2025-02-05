@@ -1,6 +1,6 @@
 import * as github from '@actions/github'
 import * as core from '@actions/core'
-import * as artifact from '@actions/artifact'
+import artifact from '@actions/artifact'
 import AdmZip from 'adm-zip'
 import fs from 'fs'
 import * as output from './output'
@@ -147,16 +147,11 @@ async function getSnapshotFollowers(
 }
 
 async function uploadFollowerFile(
-  client: artifact.ArtifactClient,
   artifactName: string,
   file: string,
 ): Promise<void> {
-  const uploadResult = await client.uploadArtifact(artifactName, [file], '.')
-  core.info(
-    `Uploaded ${uploadResult.artifactItems.join(', ')} to ${
-      uploadResult.artifactName
-    }`,
-  )
+  const uploadResult = await artifact.uploadArtifact(artifactName, [file], '.')
+  core.info(`Uploaded artifact with id: ${uploadResult.id}`)
 }
 
 function getFollowersChange(
@@ -190,7 +185,6 @@ async function run() {
   const followerFile = 'followers.json'
 
   const octokit = github.getOctokit(myToken)
-  const artifactClient = artifact.create()
 
   const {
     snapshotAt,
@@ -201,7 +195,7 @@ async function run() {
   const { followers: currentFollowers, totalCount } =
     await getFollowersFromGitHub(octokit, followerFile)
 
-  await uploadFollowerFile(artifactClient, followerArtifactName, followerFile)
+  await uploadFollowerFile(followerArtifactName, followerFile)
 
   if (isFirstRun) {
     core.info('This is the first run')
