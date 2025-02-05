@@ -151,7 +151,7 @@ async function uploadFollowerFile(
   file: string,
 ): Promise<void> {
   const uploadResult = await artifact.uploadArtifact(artifactName, [file], '.')
-  core.info(`Uploaded ${uploadResult.id}`)
+  core.info(`Uploaded artifact with id: ${uploadResult.id}`)
 }
 
 function getFollowersChange(
