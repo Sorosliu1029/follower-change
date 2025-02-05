@@ -1,6 +1,6 @@
 {
   "name": "follower-change",
-  "version": "2.2.0",
+  "version": "2.3.0",
   "description": "Get your GitHub followers change (follow or unfollow)",
   "main": "index.js",
   "scripts": {
