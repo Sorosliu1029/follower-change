@@ -84,6 +84,23 @@ for (const t of tokens) {
   if (t.startsWith('--c-')) check(`dark theme redefines ${t}`, new RegExp(`${t}\\s*:`).test(darkBlock))
 }
 
+const prose = html.replace(/<pre id="workflow-yaml"[\s\S]*?<\/pre>/, '')
+for (const secret of ['MY_TOKEN', 'MAIL_USERNAME', 'MAIL_PASSWORD', 'TO_EMAIL_ADDRESS']) {
+  check(`quick start prose names secret ${secret}`, prose.includes(secret))
+}
+check('quick start prose mentions changing server_address', prose.includes('server_address'))
+
+const [, before, after] = html.match(/(\d+) → (\d+)/) || []
+const adds = (html.match(/<span class="add">\+(\d+)<\/span>/) || [])[1]
+const dels = (html.match(/<span class="del">−(\d+)<\/span>/) || [])[1]
+const others = (html.match(/<b>(\d+) others<\/b>/) || [])[1]
+check('hero diff: before + adds − dels = after', +before + +adds - +dels === +after)
+check('hero diff: others = before − dels', +others === +before - +dels)
+
+const notifyRow = (html.match(/<td><code>shouldNotify<\/code><\/td><td>([\s\S]*?)<\/td>/) || [])[1] || ''
+check('shouldNotify description mentions notifyUnFollowEvent', notifyRow.includes('notifyUnFollowEvent'))
+check('FAQ does not claim shouldNotify is false on first run', !html.includes('<code>shouldNotify</code> is false on that run'))
+
 for (const [img] of html.matchAll(/<img\b[^>]*>/g)) {
   // empty alt is allowed for decorative images; a missing alt is not
   check(`img has alt: ${img.slice(0, 60)}`, /\balt="[^"]*"/.test(img))

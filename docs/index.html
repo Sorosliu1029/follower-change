@@ -390,8 +390,8 @@ td code { font-size: 13px; }
         </div>
         <div class="diff-row ctx">
           <span class="sign" aria-hidden="true"></span>
-          <span class="avatar" style="background:var(--c-g3)" aria-hidden="true">126</span>
-          <span class="who"><b>126 others</b><span>still following</span></span>
+          <span class="avatar" style="background:var(--c-g3)" aria-hidden="true">127</span>
+          <span class="who"><b>127 others</b><span>still following</span></span>
         </div>
         <figcaption class="diff-foot">Example output · names are made up</figcaption>
       </figure>
@@ -431,7 +431,7 @@ td code { font-size: 13px; }
   <section class="section" id="quick-start">
     <div class="wrap">
       <h2>Quick start</h2>
-      <p class="lede">Three steps, about two minutes. You can put the workflow in any repository you own — your profile README repo works well.</p>
+      <p class="lede">Three steps. You can put the workflow in any repository you own — your profile README repo works well.</p>
 
       <ol class="steps">
         <li>
@@ -442,14 +442,14 @@ td code { font-size: 13px; }
         </li>
         <li>
           <div>
-            <h3>Save it as a secret</h3>
-            <p>In the repository, go to Settings → Secrets and variables → Actions and add it as <code>MY_TOKEN</code>. See GitHub's guide to <a href="https://docs.github.com/en/actions/security-guides/encrypted-secrets#creating-encrypted-secrets-for-a-repository">creating repository secrets</a>.</p>
+            <h3>Add your secrets</h3>
+            <p>In the repository, go to Settings → Secrets and variables → Actions and add the token as <code>MY_TOKEN</code>. For the email step below, also add <code>MAIL_USERNAME</code>, <code>MAIL_PASSWORD</code> and <code>TO_EMAIL_ADDRESS</code>. See GitHub's guide to <a href="https://docs.github.com/en/actions/security-guides/encrypted-secrets#creating-encrypted-secrets-for-a-repository">creating repository secrets</a>.</p>
           </div>
         </li>
         <li>
           <div>
             <h3>Add the workflow</h3>
-            <p>This example emails you each morning using <a href="https://github.com/dawidd6/action-send-mail">action-send-mail</a>. Swap the second step for anything that takes HTML, Markdown or text.</p>
+            <p>This example emails you each morning using <a href="https://github.com/dawidd6/action-send-mail">action-send-mail</a>. Change <code>server_address</code> and <code>server_port</code> to your mail provider's SMTP server, or swap the step for anything that takes HTML, Markdown or text.</p>
             <div class="file">
               <div class="file-head"><span>.github/workflows/follower-notifier.yml</span><button class="copy" type="button" data-copy-target="workflow-yaml" hidden>Copy</button></div>
 <pre id="workflow-yaml"><span class="k">name</span>: <span class="s">follower notifier</span>
@@ -511,7 +511,7 @@ td code { font-size: 13px; }
               <thead><tr><th scope="col">Name</th><th scope="col">Description</th></tr></thead>
               <tbody>
                 <tr><td><code>changed</code></td><td>Whether your followers changed since the last run.</td></tr>
-                <tr><td><code>shouldNotify</code></td><td>Whether to run the next steps. False when nothing changed or on the first run.</td></tr>
+                <tr><td><code>shouldNotify</code></td><td>Whether to run the next steps: true when you have new followers, or unfollows with <code>notifyUnFollowEvent</code> on. Not set on the first run.</td></tr>
                 <tr><td><code>htmlFilePath</code></td><td>Path to an HTML file describing the change.</td></tr>
                 <tr><td><code>markdown</code></td><td>The change as Markdown.</td></tr>
                 <tr><td><code>plainText</code></td><td>The change as plain text.</td></tr>
@@ -554,7 +554,7 @@ td code { font-size: 13px; }
         </details>
         <details>
           <summary>Why didn't I get a notification on the first run?</summary>
-          <p>The first run has no earlier snapshot to compare with, so it only saves one. <code>shouldNotify</code> is false on that run. From the second run on, you'll be told about changes.</p>
+          <p>The first run has no earlier snapshot to compare with, so it only saves one and sets no outputs, which skips your notify step. From the second run on, you'll be told about changes.</p>
         </details>
         <details>
           <summary>Why does the token need the <code>repo</code> scope?</summary>
@@ -597,7 +597,7 @@ document.querySelectorAll('button.copy').forEach(function (btn) {
     var sel = getSelection()
     sel.removeAllRanges()
     sel.addRange(range)
-    show('Press ⌘C', 'manual')
+    show(/Mac|iPhone|iPad/.test(navigator.platform) ? 'Press ⌘C' : 'Press Ctrl+C', 'manual')
   }
   btn.hidden = false
   btn.addEventListener('click', function () {
