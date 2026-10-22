@@ -149,7 +149,7 @@ h1, h2, h3 { line-height: 1.2; margin: 0; }
   padding: 4px 4px 4px 12px;
 }
 .install code { overflow-x: auto; white-space: nowrap; }
-.install .prompt { color: var(--c-muted); user-select: none; }
+.install .prompt { color: var(--c-muted); }
 
 .copy {
   flex: none;
@@ -172,7 +172,7 @@ h1, h2, h3 { line-height: 1.2; margin: 0; }
   padding: 10px 14px; background: var(--c-bg-subtle);
   border-bottom: 1px solid var(--c-border); border-radius: 6px 6px 0 0;
 }
-.diff-head .file { font-weight: 600; }
+.diff-head .diff-file { font-weight: 600; }
 .diff-head .count { color: var(--c-muted); }
 .diffstat { margin-left: auto; display: flex; align-items: center; gap: 6px; }
 .diffstat .add { color: var(--c-add-fg); font-weight: 600; }
@@ -291,7 +291,8 @@ td code { font-size: 13px; }
 .browser { border: 1px solid var(--c-border); border-radius: 8px; overflow: hidden; background: var(--c-bg-subtle); }
 .browser-bar { display: flex; gap: 6px; padding: 10px 12px; border-bottom: 1px solid var(--c-border); }
 .browser-bar i { width: 10px; height: 10px; border-radius: 50%; background: var(--c-border); }
-.shot { position: relative; max-height: 460px; overflow: hidden; background: #fff; }
+.shot { position: relative; max-height: 520px; overflow: hidden; background: #fff; }
+.shot img { width: 100%; height: auto; margin-top: -16%; }
 .shot::after {
   content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 120px;
   background: linear-gradient(transparent, var(--c-bg-subtle));
@@ -364,7 +365,7 @@ td code { font-size: 13px; }
 
       <figure class="diff" aria-label="Example of a follower change: two new followers and one unfollow" style="margin:0">
         <div class="diff-head">
-          <span class="file">followers</span>
+          <span class="diff-file">followers</span>
           <span class="count">128 → 129</span>
           <span class="diffstat" aria-hidden="true">
             <span class="add">+2</span><span class="del">−1</span>
@@ -580,5 +581,30 @@ td code { font-size: 13px; }
   </div>
 </footer>
 
+<script>
+document.querySelectorAll('button.copy').forEach(function (btn) {
+  var target = document.getElementById(btn.dataset.copyTarget)
+  var timer
+  function show(label, state) {
+    btn.textContent = label
+    btn.dataset.state = state
+    clearTimeout(timer)
+    timer = setTimeout(function () { btn.textContent = 'Copy'; delete btn.dataset.state }, 1500)
+  }
+  function selectTarget() {
+    var range = document.createRange()
+    range.selectNodeContents(target)
+    var sel = getSelection()
+    sel.removeAllRanges()
+    sel.addRange(range)
+    show('Press ⌘C', 'manual')
+  }
+  btn.hidden = false
+  btn.addEventListener('click', function () {
+    if (!navigator.clipboard) return selectTarget()
+    navigator.clipboard.writeText(target.innerText).then(function () { show('Copied', 'done') }, selectTarget)
+  })
+})
+</script>
 </body>
 </html>
