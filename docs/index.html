@@ -457,6 +457,8 @@ td code { font-size: 13px; }
   <span class="c"># notify me daily</span>
   <span class="k">schedule</span>:
     - <span class="k">cron</span>: <span class="s">'0 3 * * *'</span> <span class="c"># in UTC time</span>
+  <span class="c"># or run it by hand from the Actions tab</span>
+  <span class="k">workflow_dispatch</span>:
 <span class="k">jobs</span>:
   <span class="k">main</span>:
     <span class="k">runs-on</span>: <span class="s">ubuntu-latest</span>
@@ -554,7 +556,7 @@ td code { font-size: 13px; }
         </details>
         <details>
           <summary>Why didn't I get a notification on the first run?</summary>
-          <p>The first run has no earlier snapshot to compare with, so it only saves one and sets no outputs, which skips your notify step. From the second run on, you'll be told about changes.</p>
+          <p>The first run has no earlier snapshot to compare with, so it only saves one and sets no outputs, which skips your notify step. To get that out of the way now, open the workflow in your Actions tab and click Run workflow. After that, every run tells you about changes.</p>
         </details>
         <details>
           <summary>Why does the token need the <code>repo</code> scope?</summary>

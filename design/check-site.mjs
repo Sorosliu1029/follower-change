@@ -99,6 +99,7 @@ check('hero diff: others = before − dels', +others === +before - +dels)
 
 const notifyRow = (html.match(/<td><code>shouldNotify<\/code><\/td><td>([\s\S]*?)<\/td>/) || [])[1] || ''
 check('shouldNotify description mentions notifyUnFollowEvent', notifyRow.includes('notifyUnFollowEvent'))
+check('FAQ first-run answer points to running it by hand', /first run[\s\S]{0,600}Run workflow/.test(html))
 check('FAQ does not claim shouldNotify is false on first run', !html.includes('<code>shouldNotify</code> is false on that run'))
 
 for (const [img] of html.matchAll(/<img\b[^>]*>/g)) {

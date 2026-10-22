@@ -1,8 +1,5 @@
 # Follower Change
 
-🌐 Website: https://follower-change.sorosliu.xyz
-
-
 ### What this action does ?
 
 Get GitHub follower change event, i.e. when a user follows or unfollows you.
@@ -21,6 +18,8 @@ on:
   # notify me daily
   schedule:
     - cron: '0 3 * * *' # in UTC time
+  # or run it by hand from the Actions tab
+  workflow_dispatch:
 jobs:
   main:
     runs-on: ubuntu-latest
