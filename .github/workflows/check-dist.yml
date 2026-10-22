@@ -11,9 +11,13 @@ on:
       - main
     paths-ignore:
       - '**.md'
+      - 'docs/**'
+      - 'design/**'
   pull_request:
     paths-ignore:
       - '**.md'
+      - 'docs/**'
+      - 'design/**'
   workflow_dispatch:
 
 jobs:
