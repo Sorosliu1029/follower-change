@@ -26,6 +26,7 @@ jobs:
           html file at: ${{ steps.followerChange.outputs.htmlFilePath }}
           "
       - uses: actions/upload-artifact@v4
+        if: steps.followerChange.outputs.htmlFilePath != ''
         with:
           name: follower-change-html
           path: ${{ steps.followerChange.outputs.htmlFilePath }}
