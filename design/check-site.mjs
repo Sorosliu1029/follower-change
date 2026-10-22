@@ -65,7 +65,7 @@ for (const [, a] of html.matchAll(/href="#([^"]*)"/g)) {
   check(`anchor #${a} resolves`, ids.has(a))
 }
 
-for (const [, href] of html.matchAll(/href="(https?:[^"]+)"/g)) {
+for (const [, href] of html.matchAll(/<a\b[^>]*href="(https?:[^"]+)"/g)) {
   check(`external link allowed: ${href}`, ALLOWED_EXTERNAL.has(href.replace(/&amp;/g, '&')))
 }
 
@@ -85,7 +85,8 @@ for (const t of tokens) {
 }
 
 for (const [img] of html.matchAll(/<img\b[^>]*>/g)) {
-  check(`img has alt: ${img.slice(0, 60)}`, /\balt="[^"]+"/.test(img))
+  // empty alt is allowed for decorative images; a missing alt is not
+  check(`img has alt: ${img.slice(0, 60)}`, /\balt="[^"]*"/.test(img))
 }
 
 if (failures.length) {

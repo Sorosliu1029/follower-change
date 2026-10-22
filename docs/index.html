@@ -1,1 +1,584 @@
-<title>follower-change</title>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>follower-change — GitHub follower notifications</title>
+<meta name="description" content="A GitHub Action that diffs your followers on a schedule and tells you who followed and who unfollowed, as HTML, Markdown or plain text.">
+<link rel="canonical" href="https://follower-change.sorosliu.xyz/">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1117" media="(prefers-color-scheme: dark)">
+<meta property="og:type" content="website">
+<meta property="og:title" content="follower-change — know who followed, and who left">
+<meta property="og:description" content="A GitHub Action that diffs your followers on a schedule and hands you the change, ready to email.">
+<meta property="og:url" content="https://follower-change.sorosliu.xyz/">
+<meta property="og:image" content="https://follower-change.sorosliu.xyz/html-screenshot.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+:root {
+  --c-bg: #ffffff;
+  --c-bg-subtle: #f6f8fa;
+  --c-fg: #1f2328;
+  --c-muted: #59636e;
+  --c-border: #d1d9e0;
+  --c-link: #0969da;
+  --c-add-bg: #dafbe1;
+  --c-add-fg: #1a7f37;
+  --c-del-bg: #ffebe9;
+  --c-del-fg: #cf222e;
+  --c-g0: #ebedf0;
+  --c-g1: #9be9a8;
+  --c-g2: #40c463;
+  --c-g3: #30a14e;
+  --c-g4: #216e39;
+  --c-btn-bg: #1f883d;
+  --c-btn-fg: #ffffff;
+  --c-code-key: #0550ae;
+  --c-code-str: #0a3069;
+  --c-code-com: #59636e;
+  --c-code-exp: #8250df;
+  --c-focus: #0969da;
+  --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif;
+  --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  --wrap: 1080px;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --c-bg: #0d1117;
+    --c-bg-subtle: #151b23;
+    --c-fg: #e6edf3;
+    --c-muted: #9198a1;
+    --c-border: #30363d;
+    --c-link: #4493f8;
+    --c-add-bg: rgba(46, 160, 67, 0.15);
+    --c-add-fg: #3fb950;
+    --c-del-bg: rgba(248, 81, 73, 0.15);
+    --c-del-fg: #f85149;
+    --c-g0: #151b23;
+    --c-g1: #033a16;
+    --c-g2: #196c2e;
+    --c-g3: #2ea043;
+    --c-g4: #56d364;
+    --c-btn-bg: #238636;
+    --c-btn-fg: #ffffff;
+    --c-code-key: #79c0ff;
+    --c-code-str: #a5d6ff;
+    --c-code-com: #9198a1;
+    --c-code-exp: #d2a8ff;
+    --c-focus: #4493f8;
+    color-scheme: dark;
+  }
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background: var(--c-bg);
+  color: var(--c-fg);
+  font: 16px/1.5 var(--sans);
+}
+a { color: var(--c-link); text-decoration: none; }
+a:hover { text-decoration: underline; }
+:focus-visible { outline: 2px solid var(--c-focus); outline-offset: 2px; border-radius: 4px; }
+code, pre, kbd { font-family: var(--mono); font-size: 0.875em; }
+p code, li code, td code, dd code {
+  background: var(--c-bg-subtle);
+  border: 1px solid var(--c-border);
+  border-radius: 6px;
+  padding: 0.1em 0.35em;
+}
+img { max-width: 100%; display: block; }
+h1, h2, h3 { line-height: 1.2; margin: 0; }
+
+.wrap { max-width: var(--wrap); margin: 0 auto; padding-inline: max(16px, 4vw); }
+.section { padding-block: 72px; border-top: 1px solid var(--c-border); }
+.section h2 { font-size: 1.75rem; font-weight: 600; letter-spacing: -0.01em; }
+.section .lede { color: var(--c-muted); margin: 8px 0 0; max-width: 60ch; }
+
+/* Header */
+.top { border-bottom: 1px solid var(--c-border); background: var(--c-bg-subtle); }
+.top .wrap { display: flex; align-items: center; gap: 24px; min-height: 60px; flex-wrap: wrap; }
+.brand { display: flex; align-items: center; gap: 8px; color: var(--c-fg); font: 600 15px var(--mono); }
+.brand:hover { text-decoration: none; }
+.brand img { width: 22px; height: 22px; }
+.top nav { margin-left: auto; display: flex; gap: 20px; font-size: 14px; }
+.top nav a { color: var(--c-fg); }
+
+/* Hero */
+.hero { position: relative; overflow: hidden; }
+.hero::before {
+  /* faint contribution-graph grid */
+  content: "";
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(var(--c-bg) 2px, transparent 2px),
+    linear-gradient(90deg, var(--c-bg) 2px, transparent 2px),
+    linear-gradient(var(--c-g0), var(--c-g0));
+  background-size: 14px 14px;
+  mask-image: radial-gradient(ellipse at 85% 30%, #000 0%, transparent 60%);
+  -webkit-mask-image: radial-gradient(ellipse at 85% 30%, #000 0%, transparent 60%);
+  pointer-events: none;
+}
+.hero .wrap {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+  gap: 56px;
+  align-items: center;
+  padding-block: 88px 96px;
+}
+.hero h1 { font-size: clamp(2.4rem, 5.2vw, 3.6rem); font-weight: 700; letter-spacing: -0.025em; max-width: 14ch; }
+.hero p { font-size: 1.15rem; color: var(--c-muted); margin: 20px 0 0; max-width: 46ch; }
+.actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 32px; }
+.btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 0 18px; height: 40px;
+  border-radius: 6px; border: 1px solid var(--c-border);
+  font: 500 15px var(--sans); color: var(--c-fg); background: var(--c-bg-subtle);
+}
+.btn:hover { text-decoration: none; border-color: var(--c-muted); }
+.btn.primary { background: var(--c-btn-bg); color: var(--c-btn-fg); border-color: transparent; }
+.btn.primary:hover { filter: brightness(1.08); }
+.install {
+  display: flex; align-items: center; gap: 4px;
+  margin-top: 28px; max-width: 100%; width: fit-content;
+  border: 1px solid var(--c-border); border-radius: 6px; background: var(--c-bg);
+  padding: 4px 4px 4px 12px;
+}
+.install code { overflow-x: auto; white-space: nowrap; }
+.install .prompt { color: var(--c-muted); user-select: none; }
+
+.copy {
+  flex: none;
+  font: 500 12px var(--sans); color: var(--c-muted);
+  background: transparent; border: 1px solid transparent; border-radius: 6px;
+  height: 28px; padding: 0 10px; cursor: pointer;
+}
+.copy:hover { color: var(--c-fg); background: var(--c-bg-subtle); border-color: var(--c-border); }
+.copy[data-state="done"] { color: var(--c-add-fg); }
+
+/* Diff card */
+.diff {
+  border: 1px solid var(--c-border); border-radius: 6px;
+  background: var(--c-bg);
+  font: 13px/1.45 var(--mono);
+  box-shadow: 0 8px 24px rgba(31, 35, 40, 0.08);
+}
+.diff-head {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding: 10px 14px; background: var(--c-bg-subtle);
+  border-bottom: 1px solid var(--c-border); border-radius: 6px 6px 0 0;
+}
+.diff-head .file { font-weight: 600; }
+.diff-head .count { color: var(--c-muted); }
+.diffstat { margin-left: auto; display: flex; align-items: center; gap: 6px; }
+.diffstat .add { color: var(--c-add-fg); font-weight: 600; }
+.diffstat .del { color: var(--c-del-fg); font-weight: 600; }
+.diffstat .boxes { display: flex; gap: 1px; }
+.diffstat .boxes i { width: 8px; height: 8px; background: var(--c-g0); border: 1px solid var(--c-border); }
+.diffstat .boxes i.a { background: var(--c-add-fg); border-color: transparent; }
+.diffstat .boxes i.d { background: var(--c-del-fg); border-color: transparent; }
+.hunk { color: var(--c-muted); background: var(--c-bg-subtle); padding: 4px 14px; border-bottom: 1px solid var(--c-border); }
+.diff-row {
+  display: grid; grid-template-columns: 16px 32px minmax(0, 1fr);
+  gap: 10px; align-items: center;
+  padding: 10px 14px;
+}
+.diff-row + .diff-row { border-top: 1px solid var(--c-border); }
+.diff-row.add { background: var(--c-add-bg); }
+.diff-row.del { background: var(--c-del-bg); }
+.diff-row .sign { font-weight: 700; text-align: center; }
+.diff-row.add .sign { color: var(--c-add-fg); }
+.diff-row.del .sign { color: var(--c-del-fg); }
+.diff-row.ctx { color: var(--c-muted); }
+.avatar {
+  width: 32px; height: 32px; border-radius: 50%;
+  display: grid; place-items: center;
+  font: 600 12px var(--sans); color: #fff;
+}
+.who { min-width: 0; }
+.who b { font-family: var(--sans); font-size: 14px; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.who span { color: var(--c-muted); font-size: 12px; }
+.diff-foot { padding: 8px 14px; color: var(--c-muted); border-top: 1px solid var(--c-border); font-size: 12px; }
+
+.diff-row.add, .diff-row.del { animation: reveal 0.5s ease-out both; }
+.diff-row:nth-of-type(3) { animation-delay: 0.35s; }
+.diff-row:nth-of-type(4) { animation-delay: 0.7s; }
+.diff-row:nth-of-type(5) { animation-delay: 1.05s; }
+@keyframes reveal {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* How it works: an Actions run graph */
+.run {
+  margin-top: 40px;
+  border: 1px solid var(--c-border); border-radius: 6px; background: var(--c-bg-subtle);
+  padding: 28px; overflow-x: auto;
+}
+.run-meta { font-size: 13px; color: var(--c-muted); margin-bottom: 20px; display: flex; gap: 8px; align-items: center; }
+.run-meta .ok { color: var(--c-add-fg); }
+.jobs { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(170px, 1fr)); gap: 32px; }
+.job {
+  position: relative;
+  border: 1px solid var(--c-border); border-radius: 6px; background: var(--c-bg);
+  padding: 12px 14px;
+}
+.job + .job::before {
+  content: ""; position: absolute; top: 22px; left: -33px; width: 32px; height: 2px;
+  background: var(--c-border);
+}
+.job + .job::after {
+  content: ""; position: absolute; top: 19px; left: -6px; width: 8px; height: 8px; border-radius: 50%;
+  background: var(--c-bg); border: 2px solid var(--c-border);
+}
+.job h3 { font-size: 14px; font-weight: 600; display: flex; gap: 8px; align-items: center; }
+.job h3 svg { flex: none; color: var(--c-add-fg); }
+.job p { margin: 6px 0 0 24px; font-size: 13px; color: var(--c-muted); }
+.note { margin: 20px 0 0; font-size: 14px; color: var(--c-muted); }
+
+/* Quick start */
+.steps { list-style: none; counter-reset: step; margin: 40px 0 0; padding: 0; display: grid; gap: 32px; }
+.steps > li { counter-increment: step; display: grid; grid-template-columns: 32px minmax(0, 1fr); gap: 16px; }
+.steps > li::before {
+  content: counter(step);
+  width: 32px; height: 32px; border-radius: 50%;
+  display: grid; place-items: center;
+  border: 1px solid var(--c-border); background: var(--c-bg-subtle);
+  font: 600 14px var(--sans);
+}
+.steps h3 { font-size: 1.05rem; font-weight: 600; padding-top: 5px; }
+.steps p { margin: 6px 0 0; color: var(--c-muted); max-width: 64ch; }
+
+.file {
+  margin-top: 16px;
+  border: 1px solid var(--c-border); border-radius: 6px; overflow: hidden;
+}
+.file-head {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 6px 6px 14px; background: var(--c-bg-subtle);
+  border-bottom: 1px solid var(--c-border);
+  font: 13px var(--mono);
+}
+.file-head span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.file-head .copy { margin-left: auto; }
+.file pre {
+  margin: 0; padding: 16px; overflow-x: auto;
+  font-size: 13px; line-height: 1.6; background: var(--c-bg);
+}
+.k { color: var(--c-code-key); }
+.s { color: var(--c-code-str); }
+.c { color: var(--c-code-com); font-style: italic; }
+.e { color: var(--c-code-exp); }
+
+/* Reference tables */
+.ref { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 40px; margin-top: 40px; }
+.ref h3 { font-size: 1.05rem; font-weight: 600; margin-bottom: 12px; }
+.table { overflow-x: auto; border: 1px solid var(--c-border); border-radius: 6px; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { text-align: left; vertical-align: top; padding: 10px 14px; border-bottom: 1px solid var(--c-border); }
+tr:last-child td { border-bottom: 0; }
+th { background: var(--c-bg-subtle); font-weight: 600; }
+td:first-child { white-space: nowrap; }
+td code { font-size: 13px; }
+.tag { font-size: 12px; color: var(--c-muted); display: block; margin-top: 2px; }
+
+/* Output */
+.output { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 56px; align-items: start; margin-top: 40px; }
+.browser { border: 1px solid var(--c-border); border-radius: 8px; overflow: hidden; background: var(--c-bg-subtle); }
+.browser-bar { display: flex; gap: 6px; padding: 10px 12px; border-bottom: 1px solid var(--c-border); }
+.browser-bar i { width: 10px; height: 10px; border-radius: 50%; background: var(--c-border); }
+.shot { position: relative; max-height: 460px; overflow: hidden; background: #fff; }
+.shot::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 120px;
+  background: linear-gradient(transparent, var(--c-bg-subtle));
+}
+.formats { list-style: none; padding: 0; margin: 0; display: grid; gap: 24px; }
+.formats h3 { font-size: 1.05rem; font-weight: 600; }
+.formats h3 code { font-weight: 400; color: var(--c-muted); font-size: 13px; margin-left: 6px; }
+.formats p { margin: 6px 0 0; color: var(--c-muted); }
+.caption { margin-top: 12px; font-size: 13px; color: var(--c-muted); }
+
+/* FAQ */
+.faq { margin-top: 32px; max-width: 760px; border: 1px solid var(--c-border); border-radius: 6px; }
+.faq details + details { border-top: 1px solid var(--c-border); }
+.faq summary { cursor: pointer; padding: 16px 20px; font-weight: 600; list-style-position: outside; }
+.faq summary::marker { color: var(--c-muted); }
+.faq details > p { margin: 0; padding: 0 20px 18px; color: var(--c-muted); max-width: 66ch; }
+
+/* Footer */
+.foot { border-top: 1px solid var(--c-border); background: var(--c-bg-subtle); font-size: 14px; color: var(--c-muted); }
+.foot .wrap { display: flex; flex-wrap: wrap; gap: 12px 24px; padding-block: 28px; }
+.foot nav { margin-left: auto; display: flex; gap: 20px; flex-wrap: wrap; }
+
+@media (max-width: 860px) {
+  .hero .wrap, .output, .ref { grid-template-columns: minmax(0, 1fr); }
+  .hero .wrap { padding-block: 56px 64px; gap: 40px; }
+  .section { padding-block: 56px; }
+  .jobs { grid-template-columns: minmax(0, 1fr); gap: 20px; }
+  .job + .job::before { top: -21px; left: 22px; width: 2px; height: 20px; }
+  .job + .job::after { display: none; }
+  .run { padding: 20px; }
+}
+@media (max-width: 520px) {
+  .top nav a.hide-sm { display: none; }
+  .diff-head .count { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .diff-row.add, .diff-row.del { animation: none; }
+}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="#top" id="top"><img src="favicon.svg" alt="" width="22" height="22">follower-change</a>
+    <nav aria-label="Primary">
+      <a href="#quick-start">Docs</a>
+      <a href="https://github.com/marketplace/actions/github-follower-change-event" class="hide-sm">Marketplace</a>
+      <a href="https://github.com/Sorosliu1029/follower-change">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <section class="hero">
+    <div class="wrap">
+      <div>
+        <h1>Know who followed — and who left.</h1>
+        <p>A GitHub Action that diffs your followers on a schedule and hands you the change as HTML, Markdown or plain text — ready to email, post or log.</p>
+        <div class="actions">
+          <a class="btn primary" href="#quick-start">Get started</a>
+          <a class="btn" href="https://github.com/Sorosliu1029/follower-change">View on GitHub</a>
+        </div>
+        <div class="install">
+          <code id="install-line"><span class="prompt">uses: </span>Sorosliu1029/follower-change@v2</code>
+          <button class="copy" type="button" data-copy-target="install-line" hidden>Copy</button>
+        </div>
+      </div>
+
+      <figure class="diff" aria-label="Example of a follower change: two new followers and one unfollow" style="margin:0">
+        <div class="diff-head">
+          <span class="file">followers</span>
+          <span class="count">128 → 129</span>
+          <span class="diffstat" aria-hidden="true">
+            <span class="add">+2</span><span class="del">−1</span>
+            <span class="boxes"><i class="a"></i><i class="a"></i><i class="a"></i><i class="d"></i><i class="d"></i></span>
+          </span>
+        </div>
+        <div class="hunk">@@ daily run · 03:00 UTC @@</div>
+        <div class="diff-row add">
+          <span class="sign" aria-hidden="true">+</span>
+          <span class="avatar" style="background:#8250df" aria-hidden="true">MC</span>
+          <span class="who"><b>Mona Chen</b><span>@mona-chen followed you</span></span>
+        </div>
+        <div class="diff-row add">
+          <span class="sign" aria-hidden="true">+</span>
+          <span class="avatar" style="background:#0969da" aria-hidden="true">RO</span>
+          <span class="who"><b>Rafael Ortiz</b><span>@rortiz-dev followed you</span></span>
+        </div>
+        <div class="diff-row del">
+          <span class="sign" aria-hidden="true">−</span>
+          <span class="avatar" style="background:#bc4c00" aria-hidden="true">KT</span>
+          <span class="who"><b>Kai Tanaka</b><span>@kaitanaka unfollowed you</span></span>
+        </div>
+        <div class="diff-row ctx">
+          <span class="sign" aria-hidden="true"></span>
+          <span class="avatar" style="background:var(--c-g3)" aria-hidden="true">126</span>
+          <span class="who"><b>126 others</b><span>still following</span></span>
+        </div>
+        <figcaption class="diff-foot">Example output · names are made up</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="section" id="how-it-works">
+    <div class="wrap">
+      <h2>How it works</h2>
+      <p class="lede">GitHub doesn't send an event when someone follows you, so the Action compares snapshots instead. Each run looks like this:</p>
+
+      <div class="run">
+        <div class="run-meta"><span class="ok">●</span> follower notifier · scheduled</div>
+        <ol class="jobs">
+          <li class="job">
+            <h3><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="m5 8.2 2 2 4-4.2" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Fetch followers</h3>
+            <p>Reads everyone who follows you now through the GraphQL API.</p>
+          </li>
+          <li class="job">
+            <h3><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="m5 8.2 2 2 4-4.2" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Load last snapshot</h3>
+            <p>Downloads the follower list saved by the previous run.</p>
+          </li>
+          <li class="job">
+            <h3><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="m5 8.2 2 2 4-4.2" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Compare</h3>
+            <p>Works out who is new and who is gone.</p>
+          </li>
+          <li class="job">
+            <h3><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="m5 8.2 2 2 4-4.2" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Save snapshot</h3>
+            <p>Uploads today's list as an artifact for the next run.</p>
+          </li>
+        </ol>
+      </div>
+      <p class="note">It isn't realtime. Run it on a cron — once a day is plenty for most people.</p>
+    </div>
+  </section>
+
+  <section class="section" id="quick-start">
+    <div class="wrap">
+      <h2>Quick start</h2>
+      <p class="lede">Three steps, about two minutes. You can put the workflow in any repository you own — your profile README repo works well.</p>
+
+      <ol class="steps">
+        <li>
+          <div>
+            <h3>Create a token</h3>
+            <p>Make a <a href="https://github.com/settings/tokens/new">personal access token</a> with the <code>read:user</code> and <code>repo</code> scopes. The Action needs <code>repo</code> to read the snapshot saved by its previous run.</p>
+          </div>
+        </li>
+        <li>
+          <div>
+            <h3>Save it as a secret</h3>
+            <p>In the repository, go to Settings → Secrets and variables → Actions and add it as <code>MY_TOKEN</code>. See GitHub's guide to <a href="https://docs.github.com/en/actions/security-guides/encrypted-secrets#creating-encrypted-secrets-for-a-repository">creating repository secrets</a>.</p>
+          </div>
+        </li>
+        <li>
+          <div>
+            <h3>Add the workflow</h3>
+            <p>This example emails you each morning using <a href="https://github.com/dawidd6/action-send-mail">action-send-mail</a>. Swap the second step for anything that takes HTML, Markdown or text.</p>
+            <div class="file">
+              <div class="file-head"><span>.github/workflows/follower-notifier.yml</span><button class="copy" type="button" data-copy-target="workflow-yaml" hidden>Copy</button></div>
+<pre id="workflow-yaml"><span class="k">name</span>: <span class="s">follower notifier</span>
+<span class="k">on</span>:
+  <span class="c"># notify me daily</span>
+  <span class="k">schedule</span>:
+    - <span class="k">cron</span>: <span class="s">'0 3 * * *'</span> <span class="c"># in UTC time</span>
+<span class="k">jobs</span>:
+  <span class="k">main</span>:
+    <span class="k">runs-on</span>: <span class="s">ubuntu-latest</span>
+    <span class="k">steps</span>:
+      - <span class="k">name</span>: <span class="s">get follower change</span>
+        <span class="k">id</span>: <span class="s">followerChange</span>
+        <span class="k">uses</span>: <span class="s">Sorosliu1029/follower-change@v2</span>
+        <span class="k">with</span>:
+          <span class="k">myToken</span>: <span class="e">${{ secrets.MY_TOKEN }}</span>
+          <span class="k">notifyUnFollowEvent</span>: <span class="s">true</span>
+      - <span class="k">name</span>: <span class="s">email me</span>
+        <span class="k">uses</span>: <span class="s">dawidd6/action-send-mail@v3</span>
+        <span class="k">if</span>: <span class="s">steps.followerChange.outputs.shouldNotify == 'true'</span>
+        <span class="k">with</span>:
+          <span class="k">server_address</span>: <span class="s">smtp.qq.com</span>
+          <span class="k">server_port</span>: <span class="s">465</span>
+          <span class="k">username</span>: <span class="e">${{ secrets.MAIL_USERNAME }}</span>
+          <span class="k">password</span>: <span class="e">${{ secrets.MAIL_PASSWORD }}</span>
+          <span class="k">subject</span>: <span class="s">GitHub Follower Change</span>
+          <span class="k">from</span>: <span class="s">Follower Change Notifier</span>
+          <span class="k">to</span>: <span class="e">${{ secrets.TO_EMAIL_ADDRESS }}</span>
+          <span class="c"># use html file from previous step as email body</span>
+          <span class="k">html_body</span>: <span class="s">file://</span><span class="e">${{ steps.followerChange.outputs.htmlFilePath }}</span></pre>
+            </div>
+          </div>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="section" id="reference">
+    <div class="wrap">
+      <h2>Inputs and outputs</h2>
+      <p class="lede">Everything the Action takes and gives back. Read outputs with <code>steps.&lt;id&gt;.outputs.&lt;name&gt;</code>.</p>
+      <div class="ref">
+        <div>
+          <h3>Inputs</h3>
+          <div class="table">
+            <table>
+              <thead><tr><th scope="col">Name</th><th scope="col">Description</th></tr></thead>
+              <tbody>
+                <tr><td><code>myToken</code><span class="tag">required</span></td><td>Personal access token with <code>read:user</code> and <code>repo</code> scopes. Store it as a secret.</td></tr>
+                <tr><td><code>notifyUnFollowEvent</code><span class="tag">default <code>false</code></span></td><td>Also report people who unfollowed you.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div>
+          <h3>Outputs</h3>
+          <div class="table">
+            <table>
+              <thead><tr><th scope="col">Name</th><th scope="col">Description</th></tr></thead>
+              <tbody>
+                <tr><td><code>changed</code></td><td>Whether your followers changed since the last run.</td></tr>
+                <tr><td><code>shouldNotify</code></td><td>Whether to run the next steps. False when nothing changed or on the first run.</td></tr>
+                <tr><td><code>htmlFilePath</code></td><td>Path to an HTML file describing the change.</td></tr>
+                <tr><td><code>markdown</code></td><td>The change as Markdown.</td></tr>
+                <tr><td><code>plainText</code></td><td>The change as plain text.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="output">
+    <div class="wrap">
+      <h2>What you receive</h2>
+      <p class="lede">The same change, in three formats. Use whichever fits where you want to be told.</p>
+      <div class="output">
+        <div>
+          <div class="browser">
+            <div class="browser-bar" aria-hidden="true"><i></i><i></i><i></i></div>
+            <div class="shot"><img src="html-screenshot.jpg" alt="Email listing new followers, each with avatar, name, bio and location" width="1228" height="2438" loading="lazy"></div>
+          </div>
+          <p class="caption">The HTML email, designed in <a href="https://github.com/Sorosliu1029/follower-change-email">follower-change-email</a>.</p>
+        </div>
+        <ul class="formats">
+          <li><h3>HTML<code>htmlFilePath</code></h3><p>A ready-made email body with avatars, names, bios and locations. Pass it straight to a mail step.</p></li>
+          <li><h3>Markdown<code>markdown</code></h3><p>Good for opening an issue, updating a README, or posting to chat tools that render Markdown.</p></li>
+          <li><h3>Plain text<code>plainText</code></h3><p>For logs, SMS gateways, or anything that just wants a string.</p></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="faq">
+    <div class="wrap">
+      <h2>Questions</h2>
+      <div class="faq">
+        <details>
+          <summary>Is it realtime?</summary>
+          <p>No. GitHub has no follow event to listen for, so the Action compares two snapshots. You'll hear about changes the next time your cron runs.</p>
+        </details>
+        <details>
+          <summary>Why didn't I get a notification on the first run?</summary>
+          <p>The first run has no earlier snapshot to compare with, so it only saves one. <code>shouldNotify</code> is false on that run. From the second run on, you'll be told about changes.</p>
+        </details>
+        <details>
+          <summary>Why does the token need the <code>repo</code> scope?</summary>
+          <p>The previous snapshot is stored as a workflow artifact in your repository. The Action uses the token to find and download it.</p>
+        </details>
+        <details>
+          <summary>Where is my follower data kept?</summary>
+          <p>Only in your own repository, as an Actions artifact. Nothing is sent anywhere else unless you add a step that does it.</p>
+        </details>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="foot">
+  <div class="wrap">
+    <span>MIT licensed · Made by Soros Liu</span>
+    <nav aria-label="Footer">
+      <a href="https://github.com/Sorosliu1029/follower-change">Source</a>
+      <a href="https://github.com/Sorosliu1029/follower-change/issues">Issues</a>
+      <a href="https://github.com/Sorosliu1029/follower-change/blob/main/LICENSE">License</a>
+      <a href="https://github.com/marketplace/actions/github-follower-change-event">Marketplace</a>
+    </nav>
+  </div>
+</footer>
+
+</body>
+</html>
